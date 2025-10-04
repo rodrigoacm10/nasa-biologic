@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Article } from '@/@types/article';
-import SearchBar from '@/app/components/SearchBar';
-import ArticleCard from '@/app/components/ArticleCard';
+import SearchBar from '@/components/SearchBar';
+import ArticleCard from '@/components/ArticleCard';
 import { Loader2, Database, Rocket, ChevronDown } from 'lucide-react';
 
 interface ArticlesResponse {

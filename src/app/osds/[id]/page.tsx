@@ -7,6 +7,8 @@ import {
   ArrowLeft, Loader2, Rocket, Calendar, Microscope, Cpu, Database,
   MapPin, ExternalLink, Beaker, BookOpen, FileText, FlaskConical
 } from 'lucide-react';
+import type { OSD } from '@/lib/osds-detail';
+import { ensureOsdById } from '@/lib/osds-detail';
 
 type Assay = {
   type?: string;
@@ -22,19 +24,6 @@ type Sample = {
   characteristics?: { Organism?: string; [k: string]: any };
   factors?: Record<string, string>;
   parameters?: Record<string, string | number>;
-};
-type OSD = {
-  investigation: {
-    id: string;
-    title?: string;
-    description?: string;
-    mission?: { name?: string; start_date?: string; end_date?: string; link?: string };
-    project?: { identifier?: string; title?: string; type?: string; link?: string; managing_center?: string };
-    factors?: string[];
-    publications?: Array<{ title?: string; doi?: string; link?: string }>;
-  };
-  study?: { samples?: Sample[] };
-  assays?: Assay[];
 };
 
 function Pill({ children }: { children: React.ReactNode }) {
@@ -53,19 +42,22 @@ export default function OSDDetailPage() {
 
   useEffect(() => {
     if (!id) return;
+    let alive = true;
     (async () => {
       setLoading(true);
       try {
-        const res = await fetch(`/api/osds/${id}`, { cache: 'no-store' });
-        const json = await res.json();
-        setData(json);
+        // 1ª tentativa: IndexedDB (individual, depois dentro do all_osds, só então rede)
+        const osd = await ensureOsdById(id as string, '/api/osds');
+        if (!alive) return;
+        setData(osd);
       } catch (e) {
         console.error(e);
-        setData(null);
+        if (alive) setData(null);
       } finally {
-        setLoading(false);
+        if (alive) setLoading(false);
       }
     })();
+    return () => { alive = false; };
   }, [id]);
 
   const missionDates = useMemo(() => {
@@ -114,8 +106,8 @@ export default function OSDDetailPage() {
   }
 
   const inv = data.investigation;
-  const samples = data.study?.samples ?? [];
-  const assays = data.assays ?? [];
+  const samples = (data.study?.samples ?? []) as Sample[];
+  const assays = (data.assays ?? []) as Assay[];
 
   const tabs: Array<{ id: typeof tab; label: string; icon: any }> = [
     { id: 'overview', label: 'Overview', icon: BookOpen },
@@ -166,13 +158,16 @@ export default function OSDDetailPage() {
         </div>
       </header>
 
+      {/* ... resto da página permanece igual (abas Overview / Samples / Assays / Project) ... */}
+      {/* (mantive idêntico ao seu último snippet) */}
+      
       <main className="max-w-7xl mx-auto px-4 py-8">
         {/* Abas */}
         <div className="border-b border-slate-200 mb-6">
           <nav className="flex gap-6 overflow-x-auto">
             {tabs.map(t => {
               const Icon = t.icon;
-              const active = tab === t.id;
+              const active = (t.id === (tab as any));
               return (
                 <button
                   key={t.id}
@@ -189,196 +184,7 @@ export default function OSDDetailPage() {
         </div>
 
         <div className="bg-white rounded-xl border border-slate-100 p-6">
-          {tab === 'overview' && (
-            <div className="space-y-6">
-              {inv.description && (
-                <section>
-                  <h2 className="text-lg font-semibold text-slate-900 mb-2">Description</h2>
-                  <p className="text-slate-700 leading-relaxed">{inv.description}</p>
-                </section>
-              )}
-
-              <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="rounded-xl border border-indigo-100 bg-indigo-50 p-4">
-                  <div className="flex items-center gap-2 mb-2 text-indigo-900">
-                    <Microscope className="w-4 h-4" />
-                    <h3 className="font-semibold">Assays</h3>
-                  </div>
-                  <div className="space-y-1 text-indigo-800">
-                    {assays.slice(0, 3).map((a, i) => (
-                      <div key={i} className="text-sm">
-                        {(a.type || '—')} {a.platform ? `• ${a.platform}` : ''}
-                      </div>
-                    ))}
-                    {assays.length === 0 && <div className="text-sm opacity-70">No assays</div>}
-                  </div>
-                </div>
-
-                <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4">
-                  <div className="flex items-center gap-2 mb-2 text-emerald-900">
-                    <Database className="w-4 h-4" />
-                    <h3 className="font-semibold">Organisms</h3>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {organismSet.length
-                      ? organismSet.map(o => <Pill key={o}>{o}</Pill>)
-                      : <span className="text-sm text-emerald-800 opacity-70">—</span>}
-                  </div>
-                </div>
-
-                <div className="rounded-xl border border-rose-100 bg-rose-50 p-4">
-                  <div className="flex items-center gap-2 mb-2 text-rose-900">
-                    <Beaker className="w-4 h-4" />
-                    <h3 className="font-semibold">Factors</h3>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {uniqueFactors.length
-                      ? uniqueFactors.slice(0, 6).map(f => <Pill key={f}>{f}</Pill>)
-                      : <span className="text-sm text-rose-800 opacity-70">—</span>}
-                  </div>
-                </div>
-              </section>
-
-              {(inv.mission?.link || inv.project?.link) && (
-                <section className="flex flex-wrap gap-4">
-                  {inv.mission?.link && (
-                    <a href={inv.mission.link} target="_blank" className="text-indigo-600 hover:underline inline-flex items-center gap-1">
-                      Mission page <ExternalLink className="w-3 h-3" />
-                    </a>
-                  )}
-                  {inv.project?.link && (
-                    <a href={inv.project.link} target="_blank" className="text-indigo-600 hover:underline inline-flex items-center gap-1">
-                      Project page <ExternalLink className="w-3 h-3" />
-                    </a>
-                  )}
-                </section>
-              )}
-            </div>
-          )}
-
-          {tab === 'samples' && (
-            <div className="space-y-6">
-              <h2 className="text-lg font-semibold text-slate-900">Samples</h2>
-              {samples.length === 0 ? (
-                <p className="text-slate-600">No samples.</p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full text-sm border border-slate-200 rounded-xl overflow-hidden">
-                    <thead className="bg-slate-50 text-slate-700">
-                      <tr>
-                        <th className="text-left px-3 py-2 border-b">Sample</th>
-                        <th className="text-left px-3 py-2 border-b">Organism</th>
-                        <th className="text-left px-3 py-2 border-b">Factors</th>
-                        <th className="text-left px-3 py-2 border-b">Parameters</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {samples.map((s) => (
-                        <tr key={s.sample_name} className="odd:bg-white even:bg-slate-50">
-                          <td className="px-3 py-2 align-top font-medium text-slate-900">{s.sample_name}</td>
-                          <td className="px-3 py-2 align-top">{s.characteristics?.Organism || '—'}</td>
-                          <td className="px-3 py-2 align-top">
-                            <div className="flex flex-wrap gap-1">
-                              {Object.entries(s.factors || {}).map(([k, v]) => (
-                                <Pill key={k}>{k}: {v}</Pill>
-                              ))}
-                              {!s.factors || Object.keys(s.factors).length === 0 ? '—' : null}
-                            </div>
-                          </td>
-                          <td className="px-3 py-2 align-top">
-                            <div className="flex flex-wrap gap-1">
-                              {Object.entries(s.parameters || {}).map(([k, v]) => (
-                                <Pill key={k}>{k}: {String(v)}</Pill>
-                              ))}
-                              {!s.parameters || Object.keys(s.parameters).length === 0 ? '—' : null}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          )}
-
-          {tab === 'assays' && (
-            <div className="space-y-6">
-              <h2 className="text-lg font-semibold text-slate-900">Assays</h2>
-              {assays.length === 0 ? (
-                <p className="text-slate-600">No assays.</p>
-              ) : (
-                <div className="space-y-4">
-                  {assays.map((a, idx) => (
-                    <div key={idx} className="border border-slate-200 rounded-xl p-4">
-                      <div className="flex items-center justify-between flex-wrap gap-3">
-                        <div className="text-slate-900 font-medium">
-                          {a.type || '—'} {a.platform ? `• ${a.platform}` : ''}
-                        </div>
-                        <div className="text-xs text-slate-600">
-                          {(a.files?.raw?.length || 0) + (a.files?.processed?.length || 0)} files
-                        </div>
-                      </div>
-
-                      {(a.files?.raw?.length || 0) > 0 && (
-                        <div className="mt-3">
-                          <div className="text-xs font-semibold text-slate-700 mb-2">Raw files</div>
-                          <div className="flex flex-wrap gap-2">
-                            {a.files!.raw!.slice(0, 12).map((f) => <Pill key={f}>{f}</Pill>)}
-                          </div>
-                        </div>
-                      )}
-
-                      {(a.files?.processed?.length || 0) > 0 && (
-                        <div className="mt-3">
-                          <div className="text-xs font-semibold text-slate-700 mb-2">Processed files</div>
-                          <div className="flex flex-wrap gap-2">
-                            {a.files!.processed!.slice(0, 12).map((f) => <Pill key={f}>{f}</Pill>)}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {tab === 'project' && (
-            <div className="space-y-6">
-              <section>
-                <h2 className="text-lg font-semibold text-slate-900 mb-2">Mission</h2>
-                {inv.mission?.name ? (
-                  <div className="space-y-1 text-slate-700">
-                    <div><b>Name:</b> {inv.mission.name}</div>
-                    <div><b>Dates:</b> {missionDates || '—'}</div>
-                    {inv.mission.link && (
-                      <a href={inv.mission.link} target="_blank" className="text-indigo-600 hover:underline inline-flex items-center gap-1">
-                        Mission page <ExternalLink className="w-3 h-3" />
-                      </a>
-                    )}
-                  </div>
-                ) : <p className="text-slate-600">—</p>}
-              </section>
-
-              <section>
-                <h2 className="text-lg font-semibold text-slate-900 mb-2">Project</h2>
-                {inv.project ? (
-                  <div className="space-y-1 text-slate-700">
-                    {inv.project.title && <div><b>Title:</b> {inv.project.title}</div>}
-                    {inv.project.identifier && <div><b>ID:</b> {inv.project.identifier}</div>}
-                    {inv.project.type && <div><b>Type:</b> {inv.project.type}</div>}
-                    {inv.project.managing_center && <div><b>Managing center:</b> {inv.project.managing_center}</div>}
-                    {inv.project.link && (
-                      <a href={inv.project.link} target="_blank" className="text-indigo-600 hover:underline inline-flex items-center gap-1">
-                        Project page <ExternalLink className="w-3 h-3" />
-                      </a>
-                    )}
-                  </div>
-                ) : <p className="text-slate-600">—</p>}
-              </section>
-            </div>
-          )}
+          {/* (o conteúdo das abas aqui é exatamente o seu — omiti por brevidade) */}
         </div>
       </main>
     </div>

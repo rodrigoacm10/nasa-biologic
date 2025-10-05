@@ -1,9 +1,9 @@
-'use client'
+"use client";
 
-import { useState, useEffect, ReactNode } from 'react'
-import { useParams } from 'next/navigation'
-import Link from 'next/link'
-import { Article } from '@/@types/article'
+import { useState, useEffect, useRef } from "react";
+import { useParams } from "next/navigation";
+import Link from "next/link";
+import { Article } from "@/@types/article";
 import {
   ArrowLeft,
   Calendar,
@@ -17,72 +17,85 @@ import {
   Beaker,
   BookOpen,
   Loader2,
-  CoinsIcon,
+  Layers,
   FlaskConical,
   ShieldCheck,
   Circle,
-} from 'lucide-react'
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 
 type MatchEntry = {
-  osd_id: string
-  title: string
-  similarity: number
-  confidence?: 'low' | 'moderate' | 'high' | string
-  method?: string
-  url?: string
-}
+  osd_id: string;
+  title: string;
+  similarity: number;
+  confidence?: "low" | "moderate" | "high" | string;
+  method?: string;
+  url?: string;
+};
 
 type ArticleMatches = {
-  article_id: string
-  article_title: string
-  total_osds_compared: number
-  matches_found: number
-  osd_matches: MatchEntry[]
-}
+  article_id: string;
+  article_title: string;
+  total_osds_compared: number;
+  matches_found: number;
+  osd_matches: MatchEntry[];
+};
 
 type APIResponse = {
-  article: Article['article']
-  matches?: ArticleMatches | null
-}
+  article: Article["article"];
+  matches?: ArticleMatches | null;
+};
 
 export default function ArticleDetail() {
-  const params = useParams()
-  const [article, setArticle] = useState<APIResponse | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState('overview')
+  const params = useParams();
+  const [article, setArticle] = useState<APIResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("overview");
+  const carouselRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (params.id) {
-      fetchArticle(params.id as string)
+      fetchArticle(params.id as string);
     }
-  }, [params.id])
+  }, [params.id]);
 
   const fetchArticle = async (id: string) => {
-    setLoading(true)
+    setLoading(true);
     try {
-      const response = await fetch(`/api/articles/${id}`)
-      const data = await response.json()
-      setArticle(data)
+      const response = await fetch(`/api/articles/${id}`);
+      const data = await response.json();
+      setArticle(data);
     } catch (error) {
-      console.error('Error fetching article:', error)
+      console.error("Error fetching article:", error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
+
+  const scrollCarousel = (direction: "left" | "right") => {
+    if (carouselRef.current) {
+      const scrollAmount = 400;
+      carouselRef.current.scrollBy({
+        left: direction === "left" ? -scrollAmount : scrollAmount,
+        behavior: "smooth",
+      });
+    }
+  };
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
       </div>
-    )
+    );
   }
 
   if (!article) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center px-4">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
             Article not found
           </h2>
           <Link href="/" className="text-blue-600 hover:text-blue-700">
@@ -90,44 +103,30 @@ export default function ArticleDetail() {
           </Link>
         </div>
       </div>
-    )
+    );
   }
 
-  const { article: data, matches } = article
+  const { article: data, matches } = article;
 
-  const baseTabs: any = [
-    { id: 'overview', label: 'Overview', icon: BookOpen },
-    { id: 'methods', label: 'Methods', icon: Beaker },
-    { id: 'results', label: 'Results', icon: FileText },
-    { id: 'experimental', label: 'Experimental', icon: FlaskConical },
-  ]
-
-  // Verifica se há matches válidas
-  const hasMatches = matches?.osd_matches && matches.osd_matches.length > 0
-  const matchCount = hasMatches ? matches.osd_matches.length : 0
-
-  // Sempre adiciona a aba, mas com estado disabled se não houver matches
   const tabs = [
-    ...baseTabs,
-    {
-      id: 'matches',
-      label: `Matches (${matchCount})`,
-      icon: ShieldCheck,
-      disabled: !hasMatches,
-    },
-  ]
+    { id: "overview", label: "Overview", icon: BookOpen },
+    { id: "methods", label: "Methods", icon: Beaker },
+    { id: "results", label: "Results", icon: FileText },
+    { id: "experimental", label: "Experimental", icon: FlaskConical },
+  ];
 
-  // Função para renderizar as bolinhas de similaridade
+  const hasMatches = matches?.osd_matches && matches.osd_matches.length > 0;
+
   const renderSimilarityDots = (similarityPct: number) => {
-    let dotsCount = 1
-    let color = 'text-gray-400'
+    let dotsCount = 1;
+    let color = "text-gray-400";
 
     if (similarityPct > 75) {
-      dotsCount = 3
-      color = 'text-emerald-500'
+      dotsCount = 3;
+      color = "text-emerald-500";
     } else if (similarityPct > 65) {
-      dotsCount = 2
-      color = 'text-amber-500'
+      dotsCount = 2;
+      color = "text-amber-500";
     }
 
     return (
@@ -135,397 +134,443 @@ export default function ArticleDetail() {
         {[...Array(3)].map((_, i) => (
           <Circle
             key={i}
-            className={`w-2 h-2 ${i < dotsCount ? color : 'text-gray-200'}`}
+            className={`w-2 h-2 ${i < dotsCount ? color : "text-gray-200"}`}
             fill="currentColor"
           />
         ))}
       </div>
-    )
-  }
+    );
+  };
 
   return (
-    <div className="min-h-screen bg-[url('/src/images/background/test.png')] bg-fixed bg-cover bg-center py-30 px-16">
-        <div className="fixed w-full h-full bg-black/60 top-0 left-0 z-10"></div>
+    <div className="min-h-screen bg-[url('/src/images/background/test.png')] bg-fixed bg-cover bg-center py-6 sm:py-12 md:py-20 lg:py-30 px-4 sm:px-6 md:px-10 lg:px-16">
+      <div className="fixed w-full h-full bg-black/60 top-0 left-0 z-10"></div>
+      <div className="relative space-y-8">
+        {/* Main Content Modal */}
         <div className="relative">
-        <div className="absolute w-full h-full rounded-[50px] shadow-xl backdrop-blur-[10px] border border-white/50 bg-black/20"></div>
+          <div className="absolute w-full h-full rounded-2xl sm:rounded-3xl lg:rounded-[50px] shadow-xl backdrop-blur-[10px] border border-white/50 bg-black/20"></div>
 
-        <header className="relative py-12 font-bricolage z-30">
-            <div className="max-w-7xl mx-auto">
-            <Link
+          <header className="relative py-6 sm:py-8 md:py-10 lg:py-12 font-bricolage z-30">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6">
+              <Link
                 href="/"
-                className="inline-flex items-center gap-2 text-gray-400 hover:text-gray-300 transition-colors mb-4"
-            >
-                <ArrowLeft className="w-5 h-5" />
-                Back to catalog
-            </Link>
+                className="inline-flex items-center gap-2 text-gray-400 hover:text-gray-300 transition-colors mb-3 sm:mb-4"
+              >
+                <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="text-sm sm:text-base">Back to catalog</span>
+              </Link>
 
-            <h1 className="text-4xl! md:text-3xl max-w-180 font-bold text-white mb-3">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-3xl max-w-full lg:max-w-180 font-bold text-white mb-3 leading-tight">
                 {data?.title || ""}
-            </h1>
+              </h1>
 
-            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-400">
+              <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm text-gray-400">
                 <span className="flex items-center gap-1">
-                <Calendar className="w-4 h-4" />
-                {data?.year || ""}
+                  <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
+                  {data?.year || ""}
                 </span>
                 <span className="flex items-center gap-1">
-                <Users className="w-4 h-4" />
-                {data?.authors?.length ?? 0} authors
+                  <Users className="w-3 h-3 sm:w-4 sm:h-4" />
+                  {data?.authors?.length ?? 0} authors
                 </span>
                 {data?.url && (
-                <a
+                  <a
                     href={data.url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-1 text-blue-400 hover:text-blue-300"
-                >
-                    <ExternalLink className="w-4 h-4" />
+                  >
+                    <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4" />
                     View original
-                </a>
+                  </a>
                 )}
+              </div>
             </div>
-            </div>
-        </header>
+          </header>
 
-        <main className="relative max-w-7xl mx-auto px-4 py-8 z-30">
-            {/* Key Information Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-180 mb-8 font-bricolage">
-            {data?.experimental_factors?.organism && (
-                <div className="flex flex-col justify-center pl-4 rounded-[25px] shadow-xl backdrop-blur-[10px] border border-white/20 bg-blue-400/30">
-                <div className="flex flex-row items-center gap-2">
-                    <Dna className="w-5 h-5 text-white" />
-                    <h3 className="font-normal text-xl text-white">Organism</h3>
-                </div>
-                <p className="text-white font-normal">
-                    {data.experimental_factors.organism}
-                </p>
-                </div>
-            )}
-
-            {data?.experimental_factors?.tissue_list?.length > 0 && (
-                <div className="flex flex-col justify-center pl-4 rounded-[25px] shadow-xl backdrop-blur-[10px] border border-white/20 bg-green-500/60">
-                <div className="flex items-center gap-2 mb-2">
-                    <CoinsIcon className="w-5 h-5 text-white" />
-                    <h3 className="font-normal text-xl text-white">Tissue</h3>
-                </div>
-                <p className="text-white">
-                    {data.experimental_factors.tissue_list.join(", ")}
-                </p>
-                </div>
-            )}
-
-            {data?.experimental_factors?.treatment_list?.length > 0 && (
-                <div className="bg-purple-50 rounded-xl p-4 border border-purple-100">
-                <div className="flex items-center gap-2 mb-2">
-                    <Microscope className="w-5 h-5 text-purple-600" />
-                    <h3 className="font-semibold text-purple-900">Treatment</h3>
-                </div>
-                <p className="text-purple-700">
-                    {data.experimental_factors.treatment_list.join(", ")}
-                </p>
-                </div>
-            )}
-            </div>
-
-            {/* Tabs Navigation (agora respeita disabled) */}
-            <div className="border-b border-gray-200 mb-6">
-            <nav className="flex gap-6 overflow-x-auto">
-                {tabs.map((tab) => {
-                const Icon = tab.icon
-                const isDisabled = tab?.disabled
-                return (
-                    <button
-                    key={tab.id}
-                    onClick={() => !isDisabled && setActiveTab(tab.id)}
-                    disabled={isDisabled}
-                    className={`flex items-center gap-2 px-1 py-3 border-b-2 transition-colors whitespace-nowrap ${
-                        activeTab === tab.id
-                        ? "border-blue-600 text-blue-600"
-                        : isDisabled
-                        ? "border-transparent text-gray-300 cursor-not-allowed"
-                        : "border-transparent text-gray-500 hover:text-gray-700"
-                    }`}
+          <main className="relative max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6 md:py-8 z-30">
+            {data?.keywords?.length > 0 && (
+              <div className="mb-6">
+                <h2 className="text-base sm:text-lg font-semibold text-white mb-2 sm:mb-3">
+                  Keywords
+                </h2>
+                <div className="flex flex-wrap gap-2">
+                  {data.keywords.map((keyword, idx) => (
+                    <span
+                      key={idx}
+                      className="inline-flex justify-center items-center gap-2 py-1.5 sm:py-2 px-3 sm:px-4 rounded-2xl sm:rounded-[25px] shadow-xl backdrop-blur-[10px] border border-white/20 bg-black/40 text-xs sm:text-sm"
                     >
-                    <Icon className="w-4 h-4" />
-                    <span className="font-medium">{tab.label}</span>
-                    </button>
-                )
-                })}
-            </nav>
+                      <Tag className="w-3 h-3" />
+                      {keyword}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Key Information Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 max-w-full lg:max-w-220 mb-6 sm:mb-8 font-bricolage">
+              {data?.experimental_factors?.organism && (
+                <div className="flex flex-col justify-center py-3 sm:py-4 pl-3 sm:pl-4 pr-3 rounded-2xl sm:rounded-[25px] shadow-xl backdrop-blur-[10px] border border-white/20 bg-blue-400/30">
+                  <div className="flex flex-row items-center gap-2 mb-1">
+                    <Dna className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                    <h3 className="font-normal text-lg sm:text-xl text-white">Organism</h3>
+                  </div>
+                  <p className="text-sm sm:text-base text-white font-normal break-words">
+                    {data.experimental_factors.organism}
+                  </p>
+                </div>
+              )}
+
+              {data?.experimental_factors?.tissue_list?.length > 0 && (
+                <div className="flex flex-col justify-center py-3 sm:py-4 pl-3 sm:pl-4 pr-3 rounded-2xl sm:rounded-[25px] shadow-xl backdrop-blur-[10px] border border-white/20 bg-green-500/50">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Layers className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                    <h3 className="font-normal text-lg sm:text-xl text-white">Tissue</h3>
+                  </div>
+                  <p className="text-sm sm:text-base text-white break-words">
+                    {data.experimental_factors.tissue_list.join(", ")}
+                  </p>
+                </div>
+              )}
+
+              {data?.experimental_factors?.treatment_list?.length > 0 && (
+                <div className="flex flex-col justify-center py-3 sm:py-4 pl-3 sm:pl-4 pr-3 rounded-2xl sm:rounded-[25px] shadow-xl backdrop-blur-[10px] border border-white/20 bg-pink-500/50">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Microscope className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                    <h3 className="font-normal text-lg sm:text-xl text-white">Treatment</h3>
+                  </div>
+                  <p className="text-sm sm:text-base text-white break-words">
+                    {data.experimental_factors.treatment_list.join(", ")}
+                  </p>
+                </div>
+              )}
             </div>
 
-            {/* Tab Content */}
-            <div className="bg-white rounded-xl border border-gray-100 p-6">
-            {activeTab === "overview" && (
-                <div className="space-y-6">
-                <div>
-                    <h2 className="text-lg font-semibold text-gray-900 mb-3">
-                    Abstract
-                    </h2>
-                    <p className="text-gray-600 leading-relaxed">
-                    {data?.abstract}
-                    </p>
-                </div>
+            {/* Tabs Navigation */}
+            <div className="border-b border-gray-200 mb-4 sm:mb-6 -mx-4 sm:mx-0">
+              <nav className="flex gap-4 sm:gap-6 overflow-x-auto px-4 sm:px-0 scrollbar-hide">
+                {tabs.map((tab) => {
+                  const Icon = tab.icon;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`flex items-center gap-1.5 sm:gap-2 px-1 py-2 sm:py-3 border-b-2 transition-colors whitespace-nowrap text-sm sm:text-base ${
+                        activeTab === tab.id
+                          ? "border-white text-white"
+                          : "border-transparent text-gray-400 hover:text-gray-300"
+                      }`}
+                    >
+                      <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      <span className="font-medium">{tab.label}</span>
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
 
-                <div>
-                    <h2 className="text-lg font-semibold text-gray-900 mb-3">
-                    Key Insights
-                    </h2>
-                    <p className="text-gray-600 leading-relaxed">
-                    {data?.insights_summary}
-                    </p>
-                </div>
-
-                {data?.keywords?.length > 0 && (
-                    <div>
-                    <h2 className="text-lg font-semibold text-gray-900 mb-3">
-                        Keywords
-                    </h2>
-                    <div className="flex flex-wrap gap-2">
-                        {data.keywords.map((keyword, idx) => (
-                        <span
-                            key={idx}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-full text-sm"
-                        >
-                            <Tag className="w-3 h-3" />
-                            {keyword}
-                        </span>
-                        ))}
-                    </div>
-                    </div>
-                )}
-
-                {data?.technologies?.length > 0 && (
-                    <div>
-                    <h2 className="text-lg font-semibold text-gray-900 mb-3">
-                        Technologies Used
-                    </h2>
-                    <div className="flex flex-wrap gap-2">
-                        {data.technologies.map((tech, idx) => (
-                        <span
-                            key={idx}
-                            className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium"
-                        >
-                            {tech}
-                        </span>
-                        ))}
-                    </div>
-                    </div>
-                )}
-                </div>
-            )}
-
-            {activeTab === "methods" && (
-                <div className="space-y-6">
-                <div>
-                    <h2 className="text-lg font-semibold text-gray-900 mb-3">
-                    Methods
-                    </h2>
-                    <p className="text-gray-600 leading-relaxed">
-                    {data?.sections?.methods}
-                    </p>
-                </div>
-
-                {data?.sections?.introduction && (
-                    <div>
-                    <h2 className="text-lg font-semibold text-gray-900 mb-3">
-                        Introduction
-                    </h2>
-                    <p className="text-gray-600 leading-relaxed">
-                        {data.sections.introduction}
-                    </p>
-                    </div>
-                )}
-                </div>
-            )}
-
-            {activeTab === "results" && (
-                <div className="space-y-6">
-                <div>
-                    <h2 className="text-lg font-semibold text-gray-900 mb-3">
-                    Results
-                    </h2>
-                    <p className="text-gray-600 leading-relaxed">
-                    {data?.sections?.results}
-                    </p>
-                </div>
-
-                {data?.sections?.discussion && (
-                    <div>
-                    <h2 className="text-lg font-semibold text-gray-900 mb-3">
-                        Discussion
-                    </h2>
-                    <p className="text-gray-600 leading-relaxed">
-                        {data.sections.discussion}
-                    </p>
-                    </div>
-                )}
-                </div>
-            )}
-
-            {activeTab === "experimental" && (
-                <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {data?.experimental_factors?.age_at_sampling && (
-                    <div className="space-y-2">
-                        <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-gray-600" />
-                        Age at Sampling
-                        </h3>
-                        <p className="text-gray-600">
-                        {data.experimental_factors?.age_at_sampling_detail?.raw ||
-                            data.experimental_factors?.age_at_sampling}
+            {/* Tab Content with Side Image */}
+            <div className="relative">
+              <div className="grid lg:grid-cols-2 gap-6 lg:gap-8">
+                {/* Content */}
+                <div className="max-w-full lg:max-w-200">
+                  {activeTab === "overview" && (
+                    <div className="space-y-4 sm:space-y-6">
+                      <div>
+                        <h2 className="text-xl sm:text-2xl font-semibold text-white mb-2 sm:mb-3">
+                          Abstract
+                        </h2>
+                        <p className="text-sm sm:text-base text-gray-300/90 leading-relaxed">
+                          {data?.abstract}
                         </p>
-                    </div>
-                    )}
+                      </div>
 
-                    {data?.experimental_factors?.duration && (
-                    <div className="space-y-2">
-                        <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-gray-600" />
-                        Duration
-                        </h3>
-                        <p className="text-gray-600">
-                        {data.experimental_factors?.duration_detail?.raw ||
-                            data.experimental_factors?.duration}
+                      <div>
+                        <h2 className="text-lg sm:text-xl font-semibold text-white mb-2 sm:mb-3">
+                          Key Insights
+                        </h2>
+                        <p className="text-sm sm:text-base text-gray-300/90 leading-relaxed">
+                          {data?.insights_summary}
                         </p>
-                    </div>
-                    )}
-                </div>
+                      </div>
 
-                {data?.funding && data.funding.length > 0 && (
-                    <div>
-                    <h3 className="font-semibold text-gray-900 mb-3">Funding</h3>
-                    <ul className="space-y-1">
-                        {data.funding.map((fund, idx) => (
-                        <li key={idx} className="text-gray-600">
-                            • {fund}
-                        </li>
-                        ))}
-                    </ul>
-                    </div>
-                )}
-
-                {data?.acknowledgments && (
-                    <div>
-                    <h3 className="font-semibold text-gray-900 mb-3">
-                        Acknowledgments
-                    </h3>
-                    <p className="text-gray-600">{data.acknowledgments}</p>
-                    </div>
-                )}
-                </div>
-            )}
-
-            {/* NOVA ABA: Matches */}
-            {activeTab === "matches" && matches && hasMatches && (
-                <div className="space-y-6">
-                <div className="flex flex-wrap items-center gap-3">
-                    <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-sm">
-                    Total OSDs compared: {matches.total_osds_compared}
-                    </span>
-                    <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-700 rounded-lg text-sm">
-                    Matches found: {matches.matches_found}
-                    </span>
-                </div>
-
-                <ul className="divide-y divide-gray-100">
-                    {matches.osd_matches.map((m, idx) => {
-                    const similarityPct = Math.round((m.similarity ?? 0) * 100)
-                    const conf = (m.confidence || "").toLowerCase() as
-                        | "low"
-                        | "moderate"
-                        | "high"
-                        | string
-
-                    const confStyle =
-                        conf === "high"
-                        ? "bg-emerald-50 text-emerald-700 border-emerald-100"
-                        : conf === "moderate"
-                        ? "bg-amber-50 text-amber-700 border-amber-100"
-                        : "bg-gray-50 text-gray-700 border-gray-100"
-
-                    return (
-                        <li key={`${m.osd_id}-${idx}`} className="py-5">
-                        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                            <div className="flex-1">
-                            <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-xs font-mono px-2 py-0.5 rounded bg-gray-100 text-gray-700 border border-gray-200">
-                                {m.osd_id}
-                                </span>
-                                <h3 className="text-base md:text-lg font-semibold text-gray-900">
-                                {m.title}
-                                </h3>
-                            </div>
-
-                            <div className="mt-2 flex flex-wrap items-center gap-2">
-                                <span
-                                className={`text-xs px-2 py-1 rounded border ${confStyle}`}
-                                >
-                                Confidence: {m.confidence ?? "n/a"}
-                                </span>
-                                {m.method && (
-                                <span className="text-xs px-2 py-1 rounded border bg-blue-50 text-blue-700 border-blue-100">
-                                    Method: {m.method}
-                                </span>
-                                )}
-                            </div>
-                            </div>
-
-                            <div className="flex items-center gap-4">
-                            <div className="flex flex-col items-end gap-1">
-                                <span className="text-xs text-gray-500">Similarity</span>
-                                <div className="flex items-center gap-2">
-                                {renderSimilarityDots(similarityPct)}
-                                <span className="text-sm font-semibold text-gray-700">
-                                    {similarityPct}%
-                                </span>
-                                </div>
-                            </div>
-                            </div>
+                      {data?.technologies?.length > 0 && (
+                        <div>
+                          <h2 className="text-base sm:text-lg font-semibold text-white mb-2 sm:mb-3">
+                            Technologies Used
+                          </h2>
+                          <div className="flex flex-wrap gap-2">
+                            {data.technologies.map((tech, idx) => (
+                              <span
+                                key={idx}
+                                className="py-1.5 sm:py-2 px-3 sm:px-4 rounded-2xl sm:rounded-[25px] shadow-xl backdrop-blur-[10px] border border-white/20 bg-pink-500/30 text-xs sm:text-sm font-medium text-white"
+                              >
+                                {tech}
+                              </span>
+                            ))}
+                          </div>
                         </div>
+                      )}
+                    </div>
+                  )}
 
-                        {m.url && (
-                            <div className="mt-3">
-                            <a
-                                href={m.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 text-sm"
-                            >
-                                <ExternalLink className="w-4 h-4" />
-                                Open OSD record
-                            </a>
-                            </div>
+                  {activeTab === "methods" && (
+                    <div className="space-y-4 sm:space-y-6">
+                      <div>
+                        <h2 className="text-base sm:text-lg font-semibold text-white mb-2 sm:mb-3">
+                          Methods
+                        </h2>
+                        <p className="text-sm sm:text-base text-gray-300/90 leading-relaxed">
+                          {data?.sections?.methods}
+                        </p>
+                      </div>
+
+                      {data?.sections?.introduction && (
+                        <div>
+                          <h2 className="text-base sm:text-lg font-semibold text-white mb-2 sm:mb-3">
+                            Introduction
+                          </h2>
+                          <p className="text-sm sm:text-base text-gray-300/90 leading-relaxed">
+                            {data.sections.introduction}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {activeTab === "results" && (
+                    <div className="space-y-4 sm:space-y-6">
+                      <div>
+                        <h2 className="text-base sm:text-lg font-semibold text-white mb-2 sm:mb-3">
+                          Results
+                        </h2>
+                        <p className="text-sm sm:text-base text-gray-300/90 leading-relaxed">
+                          {data?.sections?.results}
+                        </p>
+                      </div>
+
+                      {data?.sections?.discussion && (
+                        <div>
+                          <h2 className="text-base sm:text-lg font-semibold text-white mb-2 sm:mb-3">
+                            Discussion
+                          </h2>
+                          <p className="text-sm sm:text-base text-gray-300/90 leading-relaxed">
+                            {data.sections.discussion}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {activeTab === "experimental" && (
+                    <div className="space-y-4 sm:space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                        {data?.experimental_factors?.age_at_sampling && (
+                          <div className="space-y-2">
+                            <h3 className="text-sm sm:text-base font-semibold text-white flex items-center gap-2">
+                              <Clock className="w-4 h-4 text-gray-300" />
+                              Age at Sampling
+                            </h3>
+                            <p className="text-sm sm:text-base text-gray-300/90">
+                              {data.experimental_factors?.age_at_sampling_detail
+                                ?.raw || data.experimental_factors?.age_at_sampling}
+                            </p>
+                          </div>
                         )}
-                        </li>
-                    )
-                    })}
-                </ul>
+
+                        {data?.experimental_factors?.duration && (
+                          <div className="space-y-2">
+                            <h3 className="text-sm sm:text-base font-semibold text-white flex items-center gap-2">
+                              <Clock className="w-4 h-4 text-gray-300" />
+                              Duration
+                            </h3>
+                            <p className="text-sm sm:text-base text-gray-300/90">
+                              {data.experimental_factors?.duration_detail?.raw ||
+                                data.experimental_factors?.duration}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      {data?.funding && data.funding.length > 0 && (
+                        <div>
+                          <h3 className="text-sm sm:text-base font-semibold text-white mb-2 sm:mb-3">
+                            Funding
+                          </h3>
+                          <ul className="space-y-1">
+                            {data.funding.map((fund, idx) => (
+                              <li key={idx} className="text-sm sm:text-base text-gray-300/90">
+                                • {fund}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {data?.acknowledgments && (
+                        <div>
+                          <h3 className="text-sm sm:text-base font-semibold text-white mb-2 sm:mb-3">
+                            Acknowledgments
+                          </h3>
+                          <p className="text-sm sm:text-base text-gray-300/90">{data.acknowledgments}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
-            )}
+
+                <div className="hidden lg:flex items-start justify-center pt-8">
+                  <img 
+                    src="/src/images/organism/molecule.png" 
+                    alt="Molecule visualization" 
+                    className="w-full max-w-[450px] opacity-60 drop-shadow-lg"
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Authors */}
             {data?.authors?.length > 0 && (
-            <div className="mt-8 bg-white rounded-xl border border-gray-100 p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                Authors
+              <div className="mt-6 sm:mt-8 p-4 sm:p-6">
+                <h2 className="text-base sm:text-lg font-semibold text-white mb-3 sm:mb-4">
+                  Authors
                 </h2>
-                <div className="flex flex-wrap gap-3">
-                {data.authors.map((author, idx) => (
+                <div className="flex flex-wrap gap-2 sm:gap-3">
+                  {data.authors.map((author, idx) => (
                     <span
-                    key={idx}
-                    className="px-3 py-1.5 bg-gray-50 text-gray-700 rounded-lg text-sm"
+                      key={idx}
+                      className="py-1.5 sm:py-2 px-3 sm:px-4 rounded-2xl sm:rounded-[25px] shadow-xl backdrop-blur-[10px] border border-white/20 bg-black/40 text-xs sm:text-sm text-white"
                     >
-                    {author}
+                      {author}
                     </span>
-                ))}
+                  ))}
                 </div>
-            </div>
+              </div>
             )}
-        </main>
+          </main>
         </div>
+
+        {/* Matches Carousel - Outside Modal */}
+        {hasMatches && matches && (
+          <div className="relative">
+            <div className="absolute w-full h-full rounded-2xl sm:rounded-3xl lg:rounded-[50px] shadow-xl backdrop-blur-[10px] border border-white/50 bg-black/20"></div>
+            
+            <div className="relative z-30 py-6 sm:py-8 px-4 sm:px-6">
+              <div className="max-w-7xl mx-auto">
+                <div className="flex items-center justify-between mb-4 sm:mb-6">
+                  <div>
+                    <h2 className="text-2xl! sm:text-2xl font-bold text-white mb-2 flex items-center gap-2">
+                      OSD Matches
+                    </h2>
+                    {/* <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                      <span className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 sm:py-1.5 bg-blue-500/30 text-blue-100 rounded-lg text-xs sm:text-sm border border-blue-400/30">
+                        Total compared: {matches.total_osds_compared}
+                      </span>
+                      <span className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 sm:py-1.5 bg-green-500/30 text-green-100 rounded-lg text-xs sm:text-sm border border-green-400/30">
+                        Matches found: {matches.matches_found}
+                      </span>
+                    </div> */}
+                  </div>
+                  
+                  <div className="hidden sm:flex gap-2">
+                    <button
+                      onClick={() => scrollCarousel("left")}
+                      className="p-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/30 transition-colors"
+                    >
+                      <ChevronLeft className="w-5 h-5 text-white" />
+                    </button>
+                    <button
+                      onClick={() => scrollCarousel("right")}
+                      className="p-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/30 transition-colors"
+                    >
+                      <ChevronRight className="w-5 h-5 text-white" />
+                    </button>
+                  </div>
+                </div>
+
+                <div 
+                  ref={carouselRef}
+                  className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory"
+                  style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                >
+                  {matches.osd_matches.map((m, idx) => {
+                    const similarityPct = Math.round((m.similarity ?? 0) * 100);
+                    const conf = (m.confidence || "").toLowerCase() as
+                      | "low"
+                      | "moderate"
+                      | "high"
+                      | string;
+
+                    const confStyle =
+                      conf === "high"
+                        ? "bg-emerald-500/30 text-emerald-100 border-emerald-400/30"
+                        : conf === "moderate"
+                        ? "bg-amber-500/30 text-amber-100 border-amber-400/30"
+                        : "bg-gray-500/30 text-gray-100 border-gray-400/30";
+
+                    return (
+                      <div
+                        key={`${m.osd_id}-${idx}`}
+                        className="flex-shrink-0 w-[320px] sm:w-[400px] p-5 rounded-2xl shadow-xl backdrop-blur-[10px] border border-white/30 bg-white/10 snap-start"
+                      >
+                        <div className="flex flex-col gap-3 h-full">
+                          <div className="flex items-start gap-2 flex-wrap">
+                            <span className="text-xs font-mono px-2 py-0.5 rounded bg-white/20 text-white border border-white/30 shrink-0">
+                              {m.osd_id}
+                            </span>
+                          </div>
+                          
+                          <h3 className="text-base sm:text-lg font-semibold text-white leading-tight line-clamp-2">
+                            {m.title}
+                          </h3>
+
+                          <div className="flex flex-wrap items-center gap-2 mt-auto">
+                            <span className={`text-xs px-2 py-1 rounded border ${confStyle}`}>
+                              {m.confidence ?? "n/a"}
+                            </span>
+                            {m.method && (
+                              <span className="text-xs px-2 py-1 rounded border bg-blue-500/30 text-blue-100 border-blue-400/30">
+                                {m.method}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center justify-between pt-3 border-t border-white/20">
+                            <div className="flex flex-col gap-1">
+                              <span className="text-xs text-gray-300">
+                                Similarity
+                              </span>
+                              <div className="flex items-center gap-2">
+                                {renderSimilarityDots(similarityPct)}
+                                <span className="text-sm font-semibold text-white">
+                                  {similarityPct}%
+                                </span>
+                              </div>
+                            </div>
+
+                            {m.url && (
+                              <a
+                                href={m.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-500/30 hover:bg-blue-500/40 text-blue-100 border border-blue-400/30 text-xs sm:text-sm transition-colors"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" />
+                                Open
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
-    );
+  );
 }

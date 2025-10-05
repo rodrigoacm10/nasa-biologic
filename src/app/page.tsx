@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Article } from '@/@types/article';
 import SearchBar from '@/components/SearchBar';
 import ArticleCard from '@/components/ArticleCard';
-import { Loader2, Database, Rocket, ChevronDown } from 'lucide-react';
+import { Loader2, Database, Rocket } from 'lucide-react';
 
 interface ArticlesResponse {
   articles: Article[];
@@ -50,7 +50,6 @@ export default function Home() {
   const fetchInitialData = async () => {
     setLoading(true);
     try {
-      // Fetch first page to get filters
       const response = await fetch('/api/articles?page=1&limit=12');
       const data: ArticlesResponse = await response.json();
       
@@ -59,7 +58,6 @@ export default function Home() {
       setHasMore(data.hasMore);
       setPage(1);
       
-      // Fetch all articles for filters (sem paginação)
       const allResponse = await fetch('/api/articles?limit=1000');
       const allData: ArticlesResponse = await allResponse.json();
       extractFilters(allData.articles);
@@ -138,84 +136,109 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-      <header className="bg-white border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl">
-              <Rocket className="w-8 h-8 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">NASA Research Catalog</h1>
-              <p className="text-sm text-gray-600">Explore space biology and life science experiments</p>
+    <div className="min-h-screen bg-[url('/src/images/background/test.png')] bg-fixed bg-cover bg-center">
+      <div className="fixed w-full h-full bg-black/70 top-0 left-0 z-0"></div>
+      
+      <div className="relative pt-18 z-10">
+        {/* Header */}
+        {/* <header className="backdrop-blur-md bg-black/30 border-b border-white/10">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="p-2 sm:p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl sm:rounded-2xl shadow-lg">
+                <Rocket className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white font-bricolage">
+                  NASA Research Catalog
+                </h1>
+                <p className="text-xs sm:text-sm text-gray-300">
+                  Explore space biology and life science experiments
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-      </header>
+        </header> */}
 
-      <SearchBar onSearch={handleSearch} availableFilters={availableFilters} />
+        <SearchBar onSearch={handleSearch} availableFilters={availableFilters} />
 
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <Loader2 className="w-10 h-10 text-blue-600 animate-spin mb-4" />
-            <p className="text-gray-600">Loading articles...</p>
-          </div>
-        ) : articles.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <Database className="w-16 h-16 text-gray-300 mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No articles found</h3>
-            <p className="text-gray-600 text-center max-w-md">
-              Try adjusting your search filters or search terms to find what you're looking for.
-            </p>
-          </div>
-        ) : (
-          <>
-            <div className="mb-6 flex items-center justify-between">
-              <p className="text-sm text-gray-600">
-                Showing <span className="font-semibold text-gray-900">{articles.length}</span> of{' '}
-                <span className="font-semibold text-gray-900">{total}</span> articles
-              </p>
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-20 sm:py-32">
+              <div className="p-6 rounded-3xl backdrop-blur-xl bg-white/10 border border-white/20 shadow-2xl">
+                <Loader2 className="w-12 h-12 sm:w-16 sm:h-16 text-blue-400 animate-spin mb-4" />
+                <p className="text-gray-200 text-sm sm:text-base">Loading articles...</p>
+              </div>
             </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {articles.map((article, index) => (
-                <div 
-                  key={`${article.article.title}-${index}`}
-                  ref={index === articles.length - 1 ? lastArticleElementRef : undefined}
-                >
-                  <ArticleCard article={article} index={index} />
+          ) : articles.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 sm:py-32">
+              <div className="p-8 sm:p-12 rounded-3xl backdrop-blur-xl bg-white/10 border border-white/20 shadow-2xl text-center max-w-md">
+                <Database className="w-16 h-16 sm:w-20 sm:h-20 text-gray-400 mb-4 mx-auto" />
+                <h3 className="text-lg sm:text-xl font-semibold text-white mb-2">
+                  No articles found
+                </h3>
+                <p className="text-sm sm:text-base text-gray-300">
+                  Try adjusting your search filters or search terms to find what you're looking for.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="mb-6 px-4 py-3 rounded-2xl backdrop-blur-md bg-white/10 border border-white/20 shadow-lg">
+                <p className="text-sm sm:text-base text-gray-200">
+                  Showing{' '}
+                  <span className="font-bold text-white bg-blue-500/30 px-2 py-0.5 rounded">
+                    {articles.length}
+                  </span>{' '}
+                  of{' '}
+                  <span className="font-bold text-white bg-purple-500/30 px-2 py-0.5 rounded">
+                    {total}
+                  </span>{' '}
+                  articles
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+                {articles.map((article, index) => (
+                  <div 
+                    key={`${article.article.title}-${index}`}
+                    ref={index === articles.length - 1 ? lastArticleElementRef : undefined}
+                  >
+                    <ArticleCard article={article} index={index} />
+                  </div>
+                ))}
+              </div>
+              
+              {loadingMore && (
+                <div className="flex justify-center items-center py-8">
+                  <div className="p-4 rounded-2xl backdrop-blur-md bg-white/10 border border-white/20">
+                    <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
+                  </div>
                 </div>
-              ))}
-            </div>
-            
-            {loadingMore && (
-              <div className="flex justify-center items-center py-8">
-                <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
-              </div>
-            )}
-            
-            {!hasMore && articles.length > 0 && (
-              <div className="text-center py-8 text-gray-500">
-                <p>You've reached the end! 🎉</p>
-                <p className="text-sm mt-1">All {total} articles loaded</p>
-              </div>
-            )}
-            
-            {hasMore && !loadingMore && (
-              <div className="flex justify-center py-8">
-                <button
-                  onClick={loadMoreArticles}
-                  className="flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors text-gray-700"
-                >
-                  <ChevronDown className="w-5 h-5" />
-                  Load more articles
-                </button>
-              </div>
-            )}
-          </>
-        )}
-      </main>
+              )}
+              
+              {!hasMore && articles.length > 0 && (
+                <div className="text-center py-8">
+                  <div className="inline-block px-6 py-4 rounded-2xl backdrop-blur-md bg-white/10 border border-white/20">
+                    <p className="text-white font-medium">You've reached the end! 🎉</p>
+                    <p className="text-sm text-gray-300 mt-1">All {total} articles loaded</p>
+                  </div>
+                </div>
+              )}
+              
+              {hasMore && !loadingMore && (
+                <div className="flex justify-center py-8">
+                  <button
+                    onClick={loadMoreArticles}
+                    className="px-6 py-3 rounded-2xl backdrop-blur-md bg-white/10 hover:bg-white/20 border border-white/30 transition-all text-white font-medium shadow-lg hover:shadow-xl"
+                  >
+                    Load more articles
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </main>
+      </div>
     </div>
   );
 }

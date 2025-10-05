@@ -61,6 +61,8 @@ interface VaultRow extends VaultProps {
   key: string;
   organismKey: string;
   treatmentKey: string;
+  /** Derived for plotting to satisfy Recharts TS types */
+  topicCoveragePct: number; // 0..100
 }
 
 const nowYear = new Date().getFullYear();
@@ -207,15 +209,15 @@ export default function VaultsTab({
         Math.min(1, connections / Math.max(1, entry.total_osds_compared || 1))
       );
 
-      const years: number[] = [];
+      const yearsTmp: number[] = [];
       for (const m of entry.osd_matches || []) {
         const osd = osdIndex.get(m.osd_id);
         const y = missionYear(osd);
-        if (y) years.push(y);
+        if (y) yearsTmp.push(y);
       }
       const articleYear = parseYearMaybe((article as any)?.article?.year);
-      if (articleYear) years.push(articleYear);
-      const lastYear = years.length ? Math.max(...years) : null;
+      if (articleYear) yearsTmp.push(articleYear);
+      const lastYear = yearsTmp.length ? Math.max(...yearsTmp) : null;
 
       const oTok = strNorm(organism).split(/\s+/).filter(Boolean)[0] || "";
       const tTok = strNorm(treatment).split(/\s+/).filter(Boolean)[0] || "";
@@ -261,6 +263,7 @@ export default function VaultsTab({
         )}`,
         organismKey: strNorm(organism),
         treatmentKey: strNorm(treatment),
+        topicCoveragePct: Math.round((coverage || 0) * 100),
       };
 
       rows.push(row);
@@ -328,14 +331,14 @@ export default function VaultsTab({
       {/* Header */}
       <header className="rounded-3xl border border-white/10 bg-gradient-to-br from-white/5 to-white/10 p-6">
         <h1 className="text-2xl sm:text-3xl font-bold text-white">
-          Vaults - Knowledge Gaps in Space Biology
+          Vaults — Knowledge Gaps in Space Biology
         </h1>
         <p className="mt-2 text-sm text-gray-300">
-          We analyze connections between Articles and OSD's to surface topics
+          We analyze connections between Articles and OSDs to surface topics
           with low coverage or outdated evidence. The{" "}
-          <span className="text-white font-semibold">VaultScore (0-100)</span>{" "}
-          prioritizes low coverage, low average similarity, and weak recency -
-          spots where new studies can add the most.
+          <span className="text-white font-semibold">VaultScore (0–100)</span>{" "}
+          prioritizes low coverage, low average similarity, and weak recency —
+          the spots where new studies can contribute the most.
         </p>
         <div className="mt-3 text-[11px] sm:text-xs text-gray-400 flex flex-wrap gap-x-4 gap-y-1">
           <span>
@@ -432,9 +435,7 @@ export default function VaultsTab({
               />
               <YAxis
                 type="number"
-                dataKey={(d: any) =>
-                  Math.round((d.metrics.coverage || 0) * 100)
-                }
+                dataKey="topicCoveragePct"
                 name="TopicCoverage%"
                 domain={[0, 100]}
                 tick={{ fill: "#ddd", fontSize: 12 }}
@@ -456,9 +457,7 @@ export default function VaultsTab({
                     <div className="rounded-lg border border-white/10 bg-black/70 p-2 text-xs text-white">
                       <div className="font-semibold">{p.title}</div>
                       <div>Score: {p.score}</div>
-                      <div>
-                        Coverage: {Math.round((p.metrics.coverage || 0) * 100)}%
-                      </div>
+                      <div>Coverage: {p.topicCoveragePct}%</div>
                       <div>AvgMatch: {p.metrics.avgMatch.toFixed(2)}</div>
                     </div>
                   );
@@ -527,14 +526,13 @@ function insightFromRow({
   const pieces: string[] = [];
   if (organism && treatment)
     pieces.push(
-      `Poucos estudos conectam ${organism} e ${treatment}${
-        tissue ? ` em ${tissue}` : ""
+      `Few studies connect ${organism} and ${treatment}${
+        tissue ? ` in ${tissue}` : ""
       }.`
     );
-  if (coverage < 0.15) pieces.push("Cobertura baixa de datasets relacionados.");
-  if (avgMatch < 0.5)
-    pieces.push("Similaridade média fraca entre artigos e OSDs.");
+  if (coverage < 0.15) pieces.push("Low coverage of related datasets.");
+  if (avgMatch < 0.5) pieces.push("Weak average similarity between articles and OSDs.");
   if (missingFactors > 0.5)
-    pieces.push("Títulos dos OSDs pouco mencionam os fatores do artigo.");
+    pieces.push("OSD titles rarely mention the article's key factors.");
   return pieces.join(" ");
 }

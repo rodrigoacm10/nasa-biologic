@@ -21,7 +21,7 @@ export default function ModalRelation({
   const [hoveredOsd, setHoveredOsd] = useState<string | null>(null)
   const [mounted, setMounted] = useState(false)
 
-  // Estados para pan e zoom
+  
   const [scale, setScale] = useState(1)
   const [position, setPosition] = useState({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
@@ -33,7 +33,7 @@ export default function ModalRelation({
     setMounted(true)
   }, [])
 
-  // Bloquear scroll do body quando modal aberto
+  
   useEffect(() => {
     if (open) {
       document.body.classList.add('overflow-hidden')
@@ -43,7 +43,7 @@ export default function ModalRelation({
     return () => document.body.classList.remove('overflow-hidden')
   }, [open])
 
-  // Fechar com ESC
+  
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setOpen(false)
@@ -52,7 +52,7 @@ export default function ModalRelation({
     return () => window.removeEventListener('keydown', onKey)
   }, [open])
 
-  // Reset pan/zoom ao abrir
+  
   useEffect(() => {
     if (open) {
       setScale(1)
@@ -60,7 +60,7 @@ export default function ModalRelation({
     }
   }, [open])
 
-  // Zoom com scroll do mouse
+  
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
       if (!open) return
@@ -82,9 +82,9 @@ export default function ModalRelation({
     }
   }, [open, scale])
 
-  // Handlers de drag
+  
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (e.button !== 0) return // apenas botão esquerdo
+    if (e.button !== 0) return 
     setIsDragging(true)
     setDragStart({
       x: e.clientX - position.x,
@@ -104,7 +104,7 @@ export default function ModalRelation({
     setIsDragging(false)
   }
 
-  // Zoom buttons
+  
   const handleZoomIn = () => {
     setScale((prev) => Math.min(prev + 0.2, 3))
   }
@@ -118,7 +118,7 @@ export default function ModalRelation({
     setPosition({ x: 0, y: 0 })
   }
 
-  // Buckets de categorias com grandes gaps entre anéis
+  
   const bucketFor = (s: number): BucketKey => {
     if (s >= 0.75) return 'A'
     if (s >= 0.65) return 'B'
@@ -126,7 +126,7 @@ export default function ModalRelation({
     return 'D'
   }
 
-  // Calcula estatísticas da distribuição para ajuste dinâmico
+  
   const distributionStats = useMemo(() => {
     if (!osdMathces || osdMathces.osd_matches.length === 0) {
       return { mean: 0.5, stdDev: 0.2, min: 0, max: 1 }
@@ -142,22 +142,23 @@ export default function ModalRelation({
     return { mean, stdDev, min, max }
   }, [osdMathces])
 
-  // Intervalos radiais por bucket ajustados dinamicamente
+  
   const bucketRadiusRange = useMemo(() => {
-    // Ajusta os ranges baseado na média e desvio padrão
+    
     const { mean, stdDev } = distributionStats
   
-    // Se a concentração é alta (stdDev baixo), expande os ranges
+    
     const spreadFactor = Math.max(1, 1.5 - stdDev)
   
-    // Se a média é baixa, aumenta todos os ranges para usar mais espaço
+    
     const scaleFactor = mean < 0.5 ? 1.3 : 1
   
+    
     const baseRanges: Record<BucketKey, { min: number; max: number }> = {
-      A: { min: 160, max: 250 },
-      B: { min: 280, max: 380 },
-      C: { min: 420, max: 540 },
-      D: { min: 580, max: 720 },
+      A: { min: 160, max: 300 },
+      B: { min: 360, max: 520 },
+      C: { min: 600, max: 770 },
+      D: { min: 850, max: 1050 },
     }
   
     return Object.entries(baseRanges).reduce((acc, [key, range]) => {
@@ -169,7 +170,7 @@ export default function ModalRelation({
     }, {} as Record<BucketKey, { min: number; max: number }>)
   }, [distributionStats])
 
-  // Raio dentro do bucket, com variação aumentada para evitar sobreposição
+  
   const radiusInsideBucket = (s: number, b: BucketKey, index: number, totalInBucket: number) => {
     const { min, max } = bucketRadiusRange[b]
     const ranges: Record<BucketKey, [number, number]> = {
@@ -180,38 +181,38 @@ export default function ModalRelation({
     }
     const [lo, hi] = ranges[b]
   
-    // Posição normalizada dentro do bucket
+    
     const t = hi > lo ? Math.min(1, Math.max(0, (s - lo) / (hi - lo))) : 0
   
-    // Curva de easing mais suave para melhor distribuição
+    
     const eased = 1 - Math.pow(t, 1.3)
   
-    // Posição base no range
+    
     const base = min + (max - min) * eased
   
-    // Variação baseada no índice para distribuir mesmo com valores iguais
-    const indexVariation = (index % 7) * ((max - min) / 10)
+    
+    const indexVariation = (index % 7) * ((max - min) / 7)
   
-    // Jitter aumentado e mais inteligente
-    const jitterRange = (max - min) * 0.35 // 35% do range
+    
+    const jitterRange = (max - min) * 0.6 
     const jitter = (Math.random() - 0.5) * jitterRange
   
-    // Hash baseado na similarity para variação consistente
-    const hashVariation = (s * 1000 % 1) * ((max - min) / 8)
+    
+    const hashVariation = (s * 1000 % 1) * ((max - min) / 5)
   
     const finalRadius = base + indexVariation + jitter + hashVariation
   
     return Math.max(min, Math.min(max, finalRadius))
   }
 
-  // Gera posições com distribuição inteligente de ângulo e raio
+  
   const osdPositions = useMemo(() => {
     if (!osdMathces) return []
   
     const matches = osdMathces.osd_matches
     const total = matches.length || 1
   
-    // Conta quantos itens tem em cada bucket para melhor distribuição
+    
     const bucketsCount: Record<BucketKey, number> = { A: 0, B: 0, C: 0, D: 0 }
     const bucketsIndices: Record<BucketKey, number> = { A: 0, B: 0, C: 0, D: 0 }
   
@@ -225,17 +226,17 @@ export default function ModalRelation({
       const indexInBucket = bucketsIndices[b]++
       const totalInBucket = bucketsCount[b]
     
-      // Raio com variação aumentada
+      
       const radius = radiusInsideBucket(m.similarity, b, indexInBucket, totalInBucket)
     
-      // Ângulo base distribuído uniformemente
+      
       const baseAngle = (i / total) * 2 * Math.PI
     
-      // Jitter angular aumentado para evitar alinhamento
-      const angleJitter = (Math.random() - 0.5) * 1.4
+      
+      const angleJitter = (Math.random() - 0.5) * 2.5
     
-      // Variação angular adicional baseada no bucket e índice
-      const bucketAngleOffset = (indexInBucket / Math.max(1, totalInBucket)) * 0.6
+      
+      const bucketAngleOffset = (indexInBucket / Math.max(1, totalInBucket)) * 1.0
     
       const angle = baseAngle + angleJitter + bucketAngleOffset
     
@@ -248,13 +249,13 @@ export default function ModalRelation({
     })
   }, [osdMathces, bucketRadiusRange])
 
-  // Cor por categoria
+  
   const getColorBorder = (s: number) => {
     const b = bucketFor(s)
-    if (b === 'A') return 'border-green-500/30'
-    if (b === 'B') return 'border-yellow-500/30'
-    if (b === 'C') return 'border-orange-500/30'
-    return 'border-red-500/30'
+    if (b === 'A') return 'border-green-500/40'
+    if (b === 'B') return 'border-yellow-500/40'
+    if (b === 'C') return 'border-orange-500/40'
+    return 'border-red-500/40'
   }
 
   const getColorbg = (s: number) => {
@@ -265,7 +266,7 @@ export default function ModalRelation({
     return 'bg-red-500/30'
   }
 
-  // Tamanho sensível à similarity
+  
   const sizeFromSimilarity = (s: number) => {
     const base = 52
     const maxBoost = 60
@@ -282,7 +283,7 @@ export default function ModalRelation({
         aria-hidden="true"
       />
 
-      {/* Conteúdo em tela cheia */}
+      {/* Fullscreen content */}
       <div className="relative z-[10000] flex flex-col w-screen h-screen">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 bg-black/80">
@@ -291,10 +292,10 @@ export default function ModalRelation({
             className="text-white hover:text-gray-300 transition flex items-center gap-2"
           >
             <X className="w-5 h-5" />
-            Fechar
+            Close
           </button>
 
-          {/* Controles de zoom */}
+          {/* Zoom controls */}
           <div className="flex items-center gap-2">
             <button
               onClick={handleZoomOut}
@@ -323,7 +324,7 @@ export default function ModalRelation({
           </div>
         </div>
 
-        {/* Área central preenchendo tudo */}
+        {/* Central area filling everything */}
         <div 
           ref={containerRef}
           className="flex-1 overflow-hidden flex items-center justify-center"
@@ -333,7 +334,7 @@ export default function ModalRelation({
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
         >
-          {/* Container que move e escala o conteúdo */}
+          {/* Container that moves and scales content */}
           <div 
             className="relative w-full h-full flex items-center justify-center"
             style={{
@@ -341,7 +342,7 @@ export default function ModalRelation({
               transition: isDragging ? 'none' : 'transform 0.1s ease-out',
             }}
           >
-            {/* Centro circular */}
+            {/* Circular center */}
             <motion.div
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -365,7 +366,7 @@ export default function ModalRelation({
               </div>
             </motion.div>
 
-            {/* Nós OSD */}
+            {/* OSD nodes */}
             {osdMathces.osd_matches.map((match, index) => {
               const position = osdPositions[index]
               const size = sizeFromSimilarity(match.similarity)
@@ -384,11 +385,10 @@ export default function ModalRelation({
                     width: `${size}px`,
                     height: `${size}px`,
                     transform: 'translate(-50%, -50%)',
-                    zIndex: hoveredOsd === match.osd_id ? 1000 : 'auto', // zIndex maior quando hover
-                }}
-
+                    zIndex: hoveredOsd === match.osd_id ? 1000 : 'auto',
+                  }}
                 >
-                  {/* Linha conectando ao centro */}
+                  {/* Line connecting to center */}
                   <svg
                     className="absolute pointer-events-none"
                     style={{
@@ -411,7 +411,7 @@ export default function ModalRelation({
                     />
                   </svg>
 
-                  {/* Nó OSD */}
+                  {/* OSD node */}
                   <motion.div
                     initial={{ scale: 0, opacity: 0 }}
                     animate={{
@@ -422,7 +422,7 @@ export default function ModalRelation({
                     onHoverStart={() => setHoveredOsd(match.osd_id)}
                     onHoverEnd={() => setHoveredOsd(null)}
                     className={`
-                      ${getColorBorder(match.similarity)} backdrop-blur-[10px] border-2 bg-white/10 snap-start 
+                      ${getColorBorder(match.similarity)} backdrop-blur-[10px] border-2 bg-white/30 snap-start 
                       rounded-full shadow-lg cursor-pointer transition-[box-shadow,transform] duration-200 ${
                         hoveredOsd === match.osd_id ? 'ring-4 ring-white/50' : ''
                       }`}
@@ -458,21 +458,21 @@ export default function ModalRelation({
                       <div className="space-y-1">
                         <p className="text-xs text-gray-300">
                           <span className="font-semibold">
-                            Similaridade:
+                            Similarity:
                           </span>{' '}
                           {(match.similarity * 100).toFixed(1)}%
                         </p>
                         {match.confidence && (
                           <p className="text-xs text-gray-300">
                             <span className="font-semibold">
-                              Confiança:
+                              Confidence:
                             </span>{' '}
                             {match.confidence}
                           </p>
                         )}
                         {match.method && (
                           <p className="text-xs text-gray-300">
-                            <span className="font-semibold">Método:</span>{' '}
+                            <span className="font-semibold">Method:</span>{' '}
                             {match.method}
                           </p>
                         )}
@@ -484,10 +484,10 @@ export default function ModalRelation({
             })}
           </div>
 
-          {/* Legenda fixa na tela */}
+          {/* Fixed legend on screen */}
           <div className="fixed bottom-8 right-8 bg-black/70 backdrop-blur-sm rounded-lg p-4 border border-gray-700 pointer-events-auto z-[10001]">
             <p className="text-white text-sm font-bold mb-3">
-              Similaridade
+              Similarity
             </p>
             <div className="space-y-2">
               <div className="flex items-center gap-2">
@@ -508,14 +508,14 @@ export default function ModalRelation({
               </div>
             </div>
             <p className="text-gray-400 text-[10px] mt-3 italic">
-              Mais próximo = maior similaridade
+              Closer = higher similarity
             </p>
           </div>
 
-          {/* Instruções fixas na tela */}
+          {/* Fixed instructions on screen */}
           <div className="fixed bottom-8 left-8 bg-black/70 backdrop-blur-sm rounded-lg p-3 border border-gray-700 pointer-events-none z-[10001]">
-            <p className="text-white text-xs mb-1">🖱️ Arraste para mover</p>
-            <p className="text-white text-xs">🔍 Scroll para zoom</p>
+            <p className="text-white text-xs mb-1">🖱️ Drag to move</p>
+            <p className="text-white text-xs">🔍 Scroll to zoom</p>
           </div>
         </div>
       </div>
@@ -529,7 +529,7 @@ export default function ModalRelation({
         onClick={() => setOpen(true)}
         className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition disabled:bg-gray-500 disabled:cursor-help"
       >
-        Abrir Modal
+        Open Modal
       </button>
       {mounted && modalContent && createPortal(modalContent, document.body)}
     </>

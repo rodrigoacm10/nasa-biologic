@@ -144,7 +144,7 @@ export default function VaultCard({
       </div>
 
       {/* CTA */}
-      {href && (
+      {/* {href && (
         <div className="mt-4">
           <Link
             href={href}
@@ -154,7 +154,7 @@ export default function VaultCard({
             Explore related datasets
           </Link>
         </div>
-      )}
+      )} */}
     </motion.div>
   );
 }

@@ -24,6 +24,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import { OSDMatchCard } from "@/components/OSDMatchCard";
 
 type MatchEntry = {
   osd_id: string;
@@ -117,30 +118,7 @@ export default function ArticleDetail() {
 
   const hasMatches = matches?.osd_matches && matches.osd_matches.length > 0;
 
-  const renderSimilarityDots = (similarityPct: number) => {
-    let dotsCount = 1;
-    let color = "text-gray-400";
-
-    if (similarityPct > 75) {
-      dotsCount = 3;
-      color = "text-emerald-500";
-    } else if (similarityPct > 65) {
-      dotsCount = 2;
-      color = "text-amber-500";
-    }
-
-    return (
-      <div className="flex items-center gap-1">
-        {[...Array(3)].map((_, i) => (
-          <Circle
-            key={i}
-            className={`w-2 h-2 ${i < dotsCount ? color : "text-gray-200"}`}
-            fill="currentColor"
-          />
-        ))}
-      </div>
-    );
-  };
+ 
 
   return (
     <div className="min-h-screen bg-[url('/src/images/background/test.png')] bg-fixed bg-cover bg-center py-6 sm:py-12 md:py-20 lg:py-30 px-4 sm:px-6 md:px-10 lg:px-16">
@@ -495,74 +473,10 @@ export default function ArticleDetail() {
                   style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                 >
                   {matches.osd_matches.map((m, idx) => {
-                    const similarityPct = Math.round((m.similarity ?? 0) * 100);
-                    const conf = (m.confidence || "").toLowerCase() as
-                      | "low"
-                      | "moderate"
-                      | "high"
-                      | string;
-
-                    const confStyle =
-                      conf === "high"
-                        ? "bg-emerald-500/30 text-emerald-100 border-emerald-400/30"
-                        : conf === "moderate"
-                        ? "bg-amber-500/30 text-amber-100 border-amber-400/30"
-                        : "bg-gray-500/30 text-gray-100 border-gray-400/30";
+                     
 
                     return (
-                      <div
-                        key={`${m.osd_id}-${idx}`}
-                        className="flex-shrink-0 w-[320px] sm:w-[400px] p-5 rounded-2xl shadow-xl backdrop-blur-[10px] border border-white/30 bg-white/10 snap-start"
-                      >
-                        <div className="flex flex-col gap-3 h-full">
-                          <div className="flex items-start gap-2 flex-wrap">
-                            <span className="text-xs font-mono px-2 py-0.5 rounded bg-white/20 text-white border border-white/30 shrink-0">
-                              {m.osd_id}
-                            </span>
-                          </div>
-                          
-                          <h3 className="text-base sm:text-lg font-semibold text-white leading-tight line-clamp-2">
-                            {m.title}
-                          </h3>
-
-                          <div className="flex flex-wrap items-center gap-2 mt-auto">
-                            <span className={`text-xs px-2 py-1 rounded border ${confStyle}`}>
-                              {m.confidence ?? "n/a"}
-                            </span>
-                            {m.method && (
-                              <span className="text-xs px-2 py-1 rounded border bg-blue-500/30 text-blue-100 border-blue-400/30">
-                                {m.method}
-                              </span>
-                            )}
-                          </div>
-
-                          <div className="flex items-center justify-between pt-3 border-t border-white/20">
-                            <div className="flex flex-col gap-1">
-                              <span className="text-xs text-gray-300">
-                                Similarity
-                              </span>
-                              <div className="flex items-center gap-2">
-                                {renderSimilarityDots(similarityPct)}
-                                <span className="text-sm font-semibold text-white">
-                                  {similarityPct}%
-                                </span>
-                              </div>
-                            </div>
-
-                            {m.url && (
-                              <a
-                                href={m.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-500/30 hover:bg-blue-500/40 text-blue-100 border border-blue-400/30 text-xs sm:text-sm transition-colors"
-                              >
-                                <ExternalLink className="w-3.5 h-3.5" />
-                                Open
-                              </a>
-                            )}
-                          </div>
-                        </div>
-                      </div>
+                       <OSDMatchCard osd={m} key={idx} />
                     );
                   })}
                 </div>

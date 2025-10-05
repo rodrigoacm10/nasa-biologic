@@ -22,6 +22,7 @@ import ArticleCard from "@/components/ArticleCard";
 import OSDCard from "@/components/OSDCard";
 import OrganismBubbleChart from "@/components/graphs/OrganismBubbleChart";
 import SidebarGroupLabel from "@/components/SiderGroupRelations";
+import MatchesTab from "@/components/MatchTab";
 
 // Lazy: Recharts é usado dentro do VaultsTab; evitar SSR
 const VaultsTab = dynamic(() => import("@/components/VaultTab"), {
@@ -646,21 +647,19 @@ export default function UnifiedCatalogPage() {
         {/* Dica: conecte este botão a uma rota /matches ou a um tab futuro "matches" */}
         <button
           onClick={() => {
-            // TODO: se você criar uma aba 'matches', troque para setActiveTab('matches')
-            // por ora, pode redirecionar para uma rota /matches se existir:
-            // router.push('/matches')
+            setActiveTab("matches");
+            setSidebarOpen(false);
           }}
           className={`w-full mt-2 p-4 rounded-2xl backdrop-blur-xl border transition-all ${
             activeTab === "matches"
-              ? "bg-gradient-to-br from-purple-200/10 to-purple-500/30 border-white/20 shadow-xl scale-102"
+              ? "bg-gradient-to-br from-yellow-200/10 to-yellow-500/30 border-white/20 shadow-xl scale-102"
               : "bg-white/5 border-white/10 hover:bg-white/10"
           }`}
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-white/10 border border-gray-200/30">
-                {/* reuse the minimal inline icon */}
-                <Heart width={16}></Heart>
+                <Heart className="w-4 h-4 text-white" />
               </div>
               <div className="text-left">
                 <div className="text-sm font-bold text-white">Matches</div>
@@ -807,6 +806,10 @@ export default function UnifiedCatalogPage() {
         {activeTab === "vaults" ? (
           <div className="mb-8">
             <VaultsTab matchesUrl="/api/all_matches" />
+          </div>
+        ) : activeTab === "matches" ? (
+          <div className="mb-8">
+            <MatchesTab />
           </div>
         ) : currentLoading ? (
           <div className="flex items-center justify-center min-h-screen">

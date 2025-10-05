@@ -31,21 +31,17 @@ function normalizeStr(x?: string) {
 export default function OSDCatalogPage() {
   const [allOsds, setAllOsds] = useState<OSD[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // filtros e paginação
   const [params, setParams] = useState<OSDSearchParams>({});
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const PAGE_SIZE = 12;
 
-  // carregar do IndexedDB (via /api/osds + gunzip)
   useEffect(() => {
     let alive = true;
     (async () => {
       try {
         const data = await ensureAllOsdsCached('/api/osds');
         if (!alive) return;
-        // data pode ser array grande de OSDs
         setAllOsds(Array.isArray(data) ? data : []);
       } catch (e) {
         console.error(e);
@@ -56,7 +52,6 @@ export default function OSDCatalogPage() {
     return () => { alive = false; };
   }, []);
 
-  // extrair filtros disponíveis dinamicamente
   const available = useMemo(() => {
     const organisms = new Set<string>();
     const missions = new Set<string>();
@@ -66,18 +61,14 @@ export default function OSDCatalogPage() {
     const centers = new Set<string>();
 
     for (const osd of allOsds) {
-      // organismo (do sample)
       osd.study?.samples?.forEach(s => {
         const org = s.characteristics?.Organism;
         if (org) organisms.add(org);
         Object.values(s.factors || {}).forEach(v => v && factors.add(v));
       });
-      // fatores de investigation também
       osd.investigation?.factors?.forEach(f => f && factors.add(f));
-      // missão / centro
       if (osd.investigation?.mission?.name) missions.add(osd.investigation.mission.name);
       if (osd.investigation?.project?.managing_center) centers.add(osd.investigation.project.managing_center);
-      // ensaios
       osd.assays?.forEach(a => {
         if (a.type) assayTypes.add(a.type);
         if (a.platform) platforms.add(a.platform);
@@ -94,7 +85,6 @@ export default function OSDCatalogPage() {
     };
   }, [allOsds]);
 
-  // aplicar filtros (client-side)
   const filtered = useMemo(() => {
     const q = normalizeStr(params.q);
     const org = normalizeStr(params.organism);
@@ -103,12 +93,10 @@ export default function OSDCatalogPage() {
     const assayType = normalizeStr(params.assayType);
     const platform = normalizeStr(params.platform);
     const center = normalizeStr(params.center);
-
     const start = params.startDate ? new Date(params.startDate) : undefined;
     const end = params.endDate ? new Date(params.endDate) : undefined;
 
     return allOsds.filter(osd => {
-      // texto livre
       if (q) {
         const blob = [
           osd.investigation?.id,
@@ -123,19 +111,11 @@ export default function OSDCatalogPage() {
         ].join(' • ').toLowerCase();
         if (!blob.includes(q)) return false;
       }
-
-      // organism
       if (org) {
         const hasOrg = osd.study?.samples?.some(s => normalizeStr(s.characteristics?.Organism).includes(org));
         if (!hasOrg) return false;
       }
-
-      // mission
-      if (mission) {
-        if (!normalizeStr(osd.investigation?.mission?.name).includes(mission)) return false;
-      }
-
-      // factor (pode estar em investigation.factors ou nos samples)
+      if (mission && !normalizeStr(osd.investigation?.mission?.name).includes(mission)) return false;
       if (factor) {
         const inInv = (osd.investigation?.factors || []).some(f => normalizeStr(f).includes(factor));
         const inSamples = osd.study?.samples?.some(s =>
@@ -143,46 +123,13 @@ export default function OSDCatalogPage() {
         );
         if (!inInv && !inSamples) return false;
       }
-
-      // ensaio
-      if (assayType) {
-        const ok = osd.assays?.some(a => normalizeStr(a.type).includes(assayType));
-        if (!ok) return false;
-      }
-
-      if (platform) {
-        const ok = osd.assays?.some(a => normalizeStr(a.platform).includes(platform));
-        if (!ok) return false;
-      }
-
-      if (center) {
-        if (!normalizeStr(osd.investigation?.project?.managing_center).includes(center)) return false;
-      }
-
-      // janela de datas pela missão (opcional)
-      if (start || end) {
-        const s = osd.investigation?.mission?.start_date; // dd/mm/yyyy ou similar
-        const e = osd.investigation?.mission?.end_date;
-        const parse = (d?: string) => {
-          if (!d) return undefined;
-          // tenta dd/mm/yyyy
-          const m = d.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-          if (m) return new Date(+m[3], +m[2]-1, +m[1]);
-          // fallback: Date()
-          const dt = new Date(d);
-          return isNaN(+dt) ? undefined : dt;
-        };
-        const ms = parse(s);
-        const me = parse(e);
-        if (start && ms && ms < start && (!end || (me && me < start))) return false;
-        if (end && me && me > end && (!start || (ms && ms > end))) return false;
-      }
-
+      if (assayType && !osd.assays?.some(a => normalizeStr(a.type).includes(assayType))) return false;
+      if (platform && !osd.assays?.some(a => normalizeStr(a.platform).includes(platform))) return false;
+      if (center && !normalizeStr(osd.investigation?.project?.managing_center).includes(center)) return false;
       return true;
     });
   }, [allOsds, params]);
 
-  // paginação incremental
   const [visible, setVisible] = useState<OSD[]>([]);
   useEffect(() => {
     setPage(1);
@@ -199,7 +146,6 @@ export default function OSDCatalogPage() {
     setHasMore(slice.length < filtered.length);
   };
 
-  // infinite scroll
   const obs = useRef<IntersectionObserver | null>(null);
   const lastRef = useCallback((node: HTMLDivElement | null) => {
     if (!hasMore || loading) return;
@@ -211,74 +157,105 @@ export default function OSDCatalogPage() {
   }, [hasMore, loading, page, filtered.length]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-slate-50">
-      <header className="bg-white/80 backdrop-blur border-b border-slate-100 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-6 flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-gradient-to-br from-indigo-500 to-fuchsia-600 text-white">
-            <Rocket className="w-6 h-6" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">NASA OSD Catalog</h1>
-            <p className="text-sm text-slate-600">Datasets ISA-Tab unificados (offline-friendly)</p>
-          </div>
-        </div>
-      </header>
-
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <OSDSearchBar
-          available={available}
-          onSearch={setParams}
-          defaultParams={{}}
-        />
-
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <Loader2 className="w-10 h-10 text-indigo-600 animate-spin mb-4" />
-            <p className="text-slate-600">Carregando OSDs do cache local…</p>
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <Database className="w-16 h-16 text-slate-300 mb-4" />
-            <h3 className="text-lg font-semibold text-slate-900 mb-2">Nenhum OSD encontrado</h3>
-            <p className="text-slate-600 text-center max-w-md">
-              Ajuste os filtros ou refine a busca.
-            </p>
-          </div>
-        ) : (
-          <>
-            <div className="mb-6 flex items-center justify-between text-sm text-slate-600">
-              <div className="flex items-center gap-3">
-                <Gauge className="w-4 h-4" />
-                <span>Mostrando <b className="text-slate-900">{visible.length}</b> de <b className="text-slate-900">{filtered.length}</b> OSDs</span>
+    <div className="min-h-screen bg-[url('/src/images/background/test.png')] bg-fixed bg-cover bg-center">
+      <div className="fixed w-full h-full bg-black/70 top-0 left-0 z-0"></div>
+      
+      <div className="relative z-10">
+        <header className="backdrop-blur-md bg-black/30 border-b border-white/10">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="p-2 sm:p-3 bg-gradient-to-br from-indigo-500 to-fuchsia-600 rounded-xl sm:rounded-2xl shadow-lg">
+                <Rocket className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
               </div>
-              <div className="hidden md:flex items-center gap-4">
-                <span className="inline-flex items-center gap-2"><Microscope className="w-4 h-4" /> {available.assayTypes.length} tipos de ensaio</span>
-                <span className="inline-flex items-center gap-2"><Layers className="w-4 h-4" /> {available.platforms.length} plataformas</span>
-                <span className="inline-flex items-center gap-2"><Calendar className="w-4 h-4" /> {available.missions.length} missões</span>
+              <div>
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white font-bricolage">
+                  NASA OSD Catalog
+                </h1>
+                <p className="text-xs sm:text-sm text-gray-300">
+                  Open Science Data Repository - Unified ISA-Tab datasets
+                </p>
               </div>
             </div>
+          </div>
+        </header>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {visible.map((osd, idx) => (
-                <div key={osd.investigation.id} ref={idx === visible.length - 1 ? lastRef : undefined}>
-                  <OSDCard osd={osd} />
+        <OSDSearchBar available={available} onSearch={setParams} defaultParams={{}} />
+
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-20 sm:py-32">
+              <div className="p-6 rounded-3xl backdrop-blur-xl bg-white/10 border border-white/20 shadow-2xl">
+                <Loader2 className="w-12 h-12 sm:w-16 sm:h-16 text-blue-400 animate-spin mb-4" />
+                <p className="text-gray-200 text-sm sm:text-base">Loading OSDs from local cache...</p>
+              </div>
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 sm:py-32">
+              <div className="p-8 sm:p-12 rounded-3xl backdrop-blur-xl bg-white/10 border border-white/20 shadow-2xl text-center max-w-md">
+                <Database className="w-16 h-16 sm:w-20 sm:h-20 text-gray-400 mb-4 mx-auto" />
+                <h3 className="text-lg sm:text-xl font-semibold text-white mb-2">
+                  No OSDs found
+                </h3>
+                <p className="text-sm sm:text-base text-gray-300">
+                  Adjust filters or refine your search.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="mb-6 px-4 py-3 rounded-2xl backdrop-blur-md bg-white/10 border border-white/20 shadow-lg">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 text-sm sm:text-base text-gray-200">
+                    <Gauge className="w-4 h-4" />
+                    <span>
+                      Showing{' '}
+                      <span className="font-bold text-white bg-blue-500/30 px-2 py-0.5 rounded">
+                        {visible.length}
+                      </span>{' '}
+                      of{' '}
+                      <span className="font-bold text-white bg-purple-500/30 px-2 py-0.5 rounded">
+                        {filtered.length}
+                      </span>{' '}
+                      OSDs
+                    </span>
+                  </div>
+                  
+                  <div className="hidden md:flex items-center gap-4 text-xs text-gray-300">
+                    <span className="inline-flex items-center gap-2">
+                      <Microscope className="w-4 h-4" /> {available.assayTypes.length} assay types
+                    </span>
+                    <span className="inline-flex items-center gap-2">
+                      <Layers className="w-4 h-4" /> {available.platforms.length} platforms
+                    </span>
+                    <span className="inline-flex items-center gap-2">
+                      <Calendar className="w-4 h-4" /> {available.missions.length} missions
+                    </span>
+                  </div>
                 </div>
-              ))}
-            </div>
-
-            {hasMore && (
-              <div className="flex justify-center py-8">
-                <button
-                  onClick={loadMore}
-                  className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-700"
-                >
-                  <ChevronDown className="w-5 h-5" />
-                  Carregar mais
-                </button>
               </div>
-            )}
-          </>
-        )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+                {visible.map((osd, idx) => (
+                  <div key={osd.investigation.id} ref={idx === visible.length - 1 ? lastRef : undefined}>
+                    <OSDCard osd={osd} />
+                  </div>
+                ))}
+              </div>
+
+              {hasMore && (
+                <div className="flex justify-center py-8">
+                  <button
+                    onClick={loadMore}
+                    className="px-6 py-3 rounded-2xl backdrop-blur-md bg-white/10 hover:bg-white/20 border border-white/30 transition-all text-white font-medium shadow-lg hover:shadow-xl flex items-center gap-2"
+                  >
+                    <ChevronDown className="w-5 h-5" />
+                    Load more OSDs
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </main>
       </div>
     </div>
   );

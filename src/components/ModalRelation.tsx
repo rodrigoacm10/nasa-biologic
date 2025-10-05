@@ -1,4 +1,3 @@
-// ModalRelation.tsx
 'use client'
 
 import { useState, useMemo, useEffect, useRef } from 'react'
@@ -7,6 +6,7 @@ import { X, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { ArticleMatches } from '@/app/article/[id]/page'
 import { Article } from '@/@types/article'
+import { renderSimilarityDots } from '@/lib/rendersSimilarityStars'
 
 type BucketKey = 'A' | 'B' | 'C' | 'D'
 
@@ -20,13 +20,13 @@ export default function ModalRelation({
   const [open, setOpen] = useState(false)
   const [hoveredOsd, setHoveredOsd] = useState<string | null>(null)
   const [mounted, setMounted] = useState(false)
-  
+
   // Estados para pan e zoom
   const [scale, setScale] = useState(1)
   const [position, setPosition] = useState({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
-  
+
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -65,7 +65,7 @@ export default function ModalRelation({
     const handleWheel = (e: WheelEvent) => {
       if (!open) return
       e.preventDefault()
-      
+    
       const delta = e.deltaY * -0.001
       const newScale = Math.min(Math.max(0.5, scale + delta), 3)
       setScale(newScale)
@@ -126,16 +126,51 @@ export default function ModalRelation({
     return 'D'
   }
 
-  // Intervalos radiais por bucket (px)
-  const bucketRadiusRange: Record<BucketKey, { min: number; max: number }> = {
-    A: { min: 160, max: 210 },
-    B: { min: 260, max: 320 },
-    C: { min: 380, max: 450 },
-    D: { min: 520, max: 600 },
-  }
+  // Calcula estatísticas da distribuição para ajuste dinâmico
+  const distributionStats = useMemo(() => {
+    if (!osdMathces || osdMathces.osd_matches.length === 0) {
+      return { mean: 0.5, stdDev: 0.2, min: 0, max: 1 }
+    }
+  
+    const similarities = osdMathces.osd_matches.map(m => m.similarity)
+    const mean = similarities.reduce((a, b) => a + b, 0) / similarities.length
+    const variance = similarities.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / similarities.length
+    const stdDev = Math.sqrt(variance)
+    const min = Math.min(...similarities)
+    const max = Math.max(...similarities)
+  
+    return { mean, stdDev, min, max }
+  }, [osdMathces])
 
-  // Raio dentro do bucket, com sensibilidade adicional à similarity
-  const radiusInsideBucket = (s: number, b: BucketKey) => {
+  // Intervalos radiais por bucket ajustados dinamicamente
+  const bucketRadiusRange = useMemo(() => {
+    // Ajusta os ranges baseado na média e desvio padrão
+    const { mean, stdDev } = distributionStats
+  
+    // Se a concentração é alta (stdDev baixo), expande os ranges
+    const spreadFactor = Math.max(1, 1.5 - stdDev)
+  
+    // Se a média é baixa, aumenta todos os ranges para usar mais espaço
+    const scaleFactor = mean < 0.5 ? 1.3 : 1
+  
+    const baseRanges: Record<BucketKey, { min: number; max: number }> = {
+      A: { min: 160, max: 250 },
+      B: { min: 280, max: 380 },
+      C: { min: 420, max: 540 },
+      D: { min: 580, max: 720 },
+    }
+  
+    return Object.entries(baseRanges).reduce((acc, [key, range]) => {
+      acc[key as BucketKey] = {
+        min: range.min * scaleFactor,
+        max: range.max * scaleFactor * spreadFactor
+      }
+      return acc
+    }, {} as Record<BucketKey, { min: number; max: number }>)
+  }, [distributionStats])
+
+  // Raio dentro do bucket, com variação aumentada para evitar sobreposição
+  const radiusInsideBucket = (s: number, b: BucketKey, index: number, totalInBucket: number) => {
     const { min, max } = bucketRadiusRange[b]
     const ranges: Record<BucketKey, [number, number]> = {
       A: [0.75, 1],
@@ -144,23 +179,66 @@ export default function ModalRelation({
       D: [0, 0.39],
     }
     const [lo, hi] = ranges[b]
+  
+    // Posição normalizada dentro do bucket
     const t = hi > lo ? Math.min(1, Math.max(0, (s - lo) / (hi - lo))) : 0
-    const eased = 1 - Math.pow(t, 1.6)
+  
+    // Curva de easing mais suave para melhor distribuição
+    const eased = 1 - Math.pow(t, 1.3)
+  
+    // Posição base no range
     const base = min + (max - min) * eased
-    const jitter = (Math.random() - 0.5) * (b === 'D' ? 60 : b === 'C' ? 50 : b === 'B' ? 40 : 30)
-    return Math.max(min, Math.min(max, base + jitter))
+  
+    // Variação baseada no índice para distribuir mesmo com valores iguais
+    const indexVariation = (index % 7) * ((max - min) / 10)
+  
+    // Jitter aumentado e mais inteligente
+    const jitterRange = (max - min) * 0.35 // 35% do range
+    const jitter = (Math.random() - 0.5) * jitterRange
+  
+    // Hash baseado na similarity para variação consistente
+    const hashVariation = (s * 1000 % 1) * ((max - min) / 8)
+  
+    const finalRadius = base + indexVariation + jitter + hashVariation
+  
+    return Math.max(min, Math.min(max, finalRadius))
   }
 
-  // Gera posições (ângulo com jitter + raio por bucket)
+  // Gera posições com distribuição inteligente de ângulo e raio
   const osdPositions = useMemo(() => {
     if (!osdMathces) return []
-    const total = osdMathces.osd_matches.length || 1
-    return osdMathces.osd_matches.map((m, i) => {
+  
+    const matches = osdMathces.osd_matches
+    const total = matches.length || 1
+  
+    // Conta quantos itens tem em cada bucket para melhor distribuição
+    const bucketsCount: Record<BucketKey, number> = { A: 0, B: 0, C: 0, D: 0 }
+    const bucketsIndices: Record<BucketKey, number> = { A: 0, B: 0, C: 0, D: 0 }
+  
+    matches.forEach(m => {
       const b = bucketFor(m.similarity)
-      const radius = radiusInsideBucket(m.similarity, b)
+      bucketsCount[b]++
+    })
+  
+    return matches.map((m, i) => {
+      const b = bucketFor(m.similarity)
+      const indexInBucket = bucketsIndices[b]++
+      const totalInBucket = bucketsCount[b]
+    
+      // Raio com variação aumentada
+      const radius = radiusInsideBucket(m.similarity, b, indexInBucket, totalInBucket)
+    
+      // Ângulo base distribuído uniformemente
       const baseAngle = (i / total) * 2 * Math.PI
-      const angleJitter = (Math.random() - 0.5) * 0.9
-      const angle = baseAngle + angleJitter
+    
+      // Jitter angular aumentado para evitar alinhamento
+      const angleJitter = (Math.random() - 0.5) * 1.4
+    
+      // Variação angular adicional baseada no bucket e índice
+      const bucketAngleOffset = (indexInBucket / Math.max(1, totalInBucket)) * 0.6
+    
+      const angle = baseAngle + angleJitter + bucketAngleOffset
+    
       return {
         x: Math.cos(angle) * radius,
         y: Math.sin(angle) * radius,
@@ -168,15 +246,23 @@ export default function ModalRelation({
         radius,
       }
     })
-  }, [osdMathces])
+  }, [osdMathces, bucketRadiusRange])
 
   // Cor por categoria
-  const getColor = (s: number) => {
+  const getColorBorder = (s: number) => {
     const b = bucketFor(s)
-    if (b === 'A') return 'bg-green-500'
-    if (b === 'B') return 'bg-yellow-500'
-    if (b === 'C') return 'bg-orange-500'
-    return 'bg-red-500'
+    if (b === 'A') return 'border-green-500/30'
+    if (b === 'B') return 'border-yellow-500/30'
+    if (b === 'C') return 'border-orange-500/30'
+    return 'border-red-500/30'
+  }
+
+  const getColorbg = (s: number) => {
+    const b = bucketFor(s)
+    if (b === 'A') return 'bg-green-500/30'
+    if (b === 'B') return 'bg-yellow-500/30'
+    if (b === 'C') return 'bg-orange-500/30'
+    return 'bg-red-500/30'
   }
 
   // Tamanho sensível à similarity
@@ -247,6 +333,7 @@ export default function ModalRelation({
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
         >
+          {/* Container que move e escala o conteúdo */}
           <div 
             className="relative w-full h-full flex items-center justify-center"
             style={{
@@ -282,6 +369,7 @@ export default function ModalRelation({
             {osdMathces.osd_matches.map((match, index) => {
               const position = osdPositions[index]
               const size = sizeFromSimilarity(match.similarity)
+              const similarityPct = Math.round((match.similarity ?? 0) * 100)
 
               return (
                 <motion.div
@@ -296,7 +384,9 @@ export default function ModalRelation({
                     width: `${size}px`,
                     height: `${size}px`,
                     transform: 'translate(-50%, -50%)',
-                  }}
+                    zIndex: hoveredOsd === match.osd_id ? 1000 : 'auto', // zIndex maior quando hover
+                }}
+
                 >
                   {/* Linha conectando ao centro */}
                   <svg
@@ -331,11 +421,11 @@ export default function ModalRelation({
                     transition={{ duration: 0.6, delay: index * 0.05 }}
                     onHoverStart={() => setHoveredOsd(match.osd_id)}
                     onHoverEnd={() => setHoveredOsd(null)}
-                    className={`${getColor(
-                      match.similarity,
-                    )} rounded-full shadow-lg cursor-pointer transition-[box-shadow,transform] duration-200 ${
-                      hoveredOsd === match.osd_id ? 'ring-4 ring-white/50' : ''
-                    }`}
+                    className={`
+                      ${getColorBorder(match.similarity)} backdrop-blur-[10px] border-2 bg-white/10 snap-start 
+                      rounded-full shadow-lg cursor-pointer transition-[box-shadow,transform] duration-200 ${
+                        hoveredOsd === match.osd_id ? 'ring-4 ring-white/50' : ''
+                      }`}
                     style={{
                       width: `${size}px`,
                       height: `${size}px`,
@@ -345,6 +435,10 @@ export default function ModalRelation({
                       <p className="text-white font-bold text-xs truncate w-full text-center px-1">
                         {match.osd_id}
                       </p>
+                      <div className={getColorbg(match.similarity) + ' w-full h-[1px] my-2'}></div>
+                      <div>
+                        {renderSimilarityDots(similarityPct)}
+                      </div>
                       <p className="text-white text-[10px] mt-1 font-semibold">
                         {(match.similarity * 100).toFixed(0)}%
                       </p>
@@ -388,40 +482,40 @@ export default function ModalRelation({
                 </motion.div>
               )
             })}
+          </div>
 
-            {/* Legenda */}
-            <div className="absolute bottom-8 right-8 bg-black/70 backdrop-blur-sm rounded-lg p-4 border border-gray-700 pointer-events-auto">
-              <p className="text-white text-sm font-bold mb-3">
-                Similaridade
-              </p>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-green-500 rounded-full" />
-                  <span className="text-white text-xs">≥ 75%</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-yellow-500 rounded-full" />
-                  <span className="text-white text-xs">65–74%</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-orange-500 rounded-full" />
-                  <span className="text-white text-xs">40–64%</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-red-500 rounded-full" />
-                  <span className="text-white text-xs">&lt; 40%</span>
-                </div>
+          {/* Legenda fixa na tela */}
+          <div className="fixed bottom-8 right-8 bg-black/70 backdrop-blur-sm rounded-lg p-4 border border-gray-700 pointer-events-auto z-[10001]">
+            <p className="text-white text-sm font-bold mb-3">
+              Similaridade
+            </p>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-green-500 rounded-full" />
+                <span className="text-white text-xs">≥ 75%</span>
               </div>
-              <p className="text-gray-400 text-[10px] mt-3 italic">
-                Mais próximo = maior similaridade
-              </p>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-yellow-500 rounded-full" />
+                <span className="text-white text-xs">65–74%</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-orange-500 rounded-full" />
+                <span className="text-white text-xs">40–64%</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-red-500 rounded-full" />
+                <span className="text-white text-xs">&lt; 40%</span>
+              </div>
             </div>
+            <p className="text-gray-400 text-[10px] mt-3 italic">
+              Mais próximo = maior similaridade
+            </p>
+          </div>
 
-            {/* Instruções */}
-            <div className="absolute bottom-8 left-8 bg-black/70 backdrop-blur-sm rounded-lg p-3 border border-gray-700 pointer-events-none">
-              <p className="text-white text-xs mb-1">🖱️ Arraste para mover</p>
-              <p className="text-white text-xs">🔍 Scroll para zoom</p>
-            </div>
+          {/* Instruções fixas na tela */}
+          <div className="fixed bottom-8 left-8 bg-black/70 backdrop-blur-sm rounded-lg p-3 border border-gray-700 pointer-events-none z-[10001]">
+            <p className="text-white text-xs mb-1">🖱️ Arraste para mover</p>
+            <p className="text-white text-xs">🔍 Scroll para zoom</p>
           </div>
         </div>
       </div>

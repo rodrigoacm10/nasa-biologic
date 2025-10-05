@@ -1,4 +1,5 @@
 import { Circle, ExternalLink } from 'lucide-react'
+import Link from 'next/link'
 
 export const OSDMatchCard = ({ osd }: any) => {
   const similarityPct = Math.round((osd.similarity ?? 0) * 100)
@@ -29,6 +30,7 @@ export const OSDMatchCard = ({ osd }: any) => {
 
     return (
       <div className="flex items-center gap-1">
+ 
         {[...Array(3)].map((_, i) => (
           <Circle
             key={i}
@@ -41,7 +43,8 @@ export const OSDMatchCard = ({ osd }: any) => {
   }
 
   return (
-    <div
+            <Link href={`/osds/${osd.osd_id}`}>
+         <div
       key={`${osd.osd_id}]`}
       className="flex-shrink-0 w-[420px] sm:w-[540px] p-5 rounded-2xl shadow-xl backdrop-blur-[10px] border border-white/30 bg-white/10 snap-start"
     >
@@ -157,5 +160,7 @@ export const OSDMatchCard = ({ osd }: any) => {
         </div>
       </div>
     </div>
+        </Link>
+   
   )
 }

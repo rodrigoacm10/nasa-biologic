@@ -54,7 +54,7 @@ export default function OSDDetailPage() {
         <div className="relative z-10 text-center p-8 rounded-3xl backdrop-blur-xl bg-white/10 border border-white/20 shadow-2xl">
           <Database className="w-16 h-16 text-gray-400 mb-4 mx-auto" />
           <h2 className="text-2xl font-bold text-white mb-2">OSD not found</h2>
-          <Link href="/osds" className="text-blue-300 hover:text-blue-200">
+          <Link href="/" className="text-blue-300 hover:text-blue-200">
             Return to catalog
           </Link>
         </div>
@@ -90,7 +90,7 @@ export default function OSDDetailPage() {
         {/* Header */}
         <header className="backdrop-blur-md bg-black/30 border-b border-white/10">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-            <Link href="/osds" className="inline-flex items-center gap-2 text-gray-300 hover:text-white mb-4 transition-colors">
+            <Link href="/" className="inline-flex items-center gap-2 text-gray-300 hover:text-white mb-4 transition-colors">
               <ArrowLeft className="w-4 h-4" />
               <span className="text-sm sm:text-base">Back to catalog</span>
             </Link>
@@ -180,7 +180,7 @@ export default function OSDDetailPage() {
                   <div>
                     <h2 className="text-lg sm:text-xl font-semibold text-white mb-3">Experimental Factors</h2>
                     <div className="flex flex-wrap gap-2">
-                      {uniqueFactors.map((f, i) => (
+                      {uniqueFactors.map((f: any, i) => (
                         <span key={i} className="px-3 py-1.5 rounded-lg bg-purple-500/30 backdrop-blur-sm border border-purple-400/30 text-purple-100 text-sm">
                           {f}
                         </span>
@@ -232,7 +232,7 @@ export default function OSDDetailPage() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs sm:text-sm">
                           {s.characteristics && Object.entries(s.characteristics).map(([k, v]) => (
                             <div key={k} className="text-gray-300">
-                              <span className="text-gray-400">{k}:</span> {v}
+                              <span className="text-gray-400">{k}:</span> {v as any}
                             </div>
                           ))}
                         </div>
@@ -240,7 +240,7 @@ export default function OSDDetailPage() {
                           <div className="mt-2 flex flex-wrap gap-2">
                             {Object.entries(s.factors).map(([k, v]) => (
                               <span key={k} className="px-2 py-1 rounded bg-green-500/30 border border-green-400/30 text-green-100 text-xs">
-                                {k}: {v}
+                                {k}: {v as any}
                               </span>
                             ))}
                           </div>
@@ -358,7 +358,7 @@ export default function OSDDetailPage() {
                       <Users className="w-5 h-5" /> Contacts
                     </h2>
                     <div className="space-y-2">
-                      {inv.contacts.map((c, i) => (
+                      {inv.contacts.map((c: any, i: any) => (
                         <div key={i} className="p-3 rounded-xl bg-white/5 border border-white/10">
                           <p className="text-white font-medium">
                             {c.first_name} {c.last_name}

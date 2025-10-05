@@ -5,15 +5,26 @@ import { ensureAllOsdsCached } from './osds-cache';
 const KEY_ALL_DATA = 'all_osds:data';
 const KEY_OSD_PREFIX = 'osd:'; // osd:OSD-123
 
+export interface OSDContact {
+  first_name?: string;
+  last_name?: string;
+  role?: string;
+  email?: string;
+  affiliation?: string;
+}
+
 export type OSD = {
   investigation: {
+    contacts?: OSDContact[];
     id: string;
     title?: string;
     description?: string;
     mission?: { name?: string; start_date?: string; end_date?: string; link?: string };
-    project?: { identifier?: string; title?: string; type?: string; link?: string; managing_center?: string };
+    project?: {
+        funding: string; identifier?: string; title?: string; type?: string; link?: string; managing_center?: string 
+};
     factors?: string[];
-    publications?: Array<{ title?: string; doi?: string; link?: string }>;
+    publications?: Array<{ authors?: string[]; title?: string; doi?: string; link?: string }>;
   };
   study?: { samples?: any[] };
   assays?: Array<{ type?: string; platform?: string; files?: { raw?: string[]; processed?: string[]; reports?: string[] } }>;

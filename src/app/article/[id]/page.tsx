@@ -166,7 +166,7 @@ export default function ArticleDetail() {
             </div>
           </header>
 
-          <main className="relative max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6 md:py-8 z-30">
+          <main className="relative max-w-7xl mx-auto px-4 sm:px-6 pb-4 sm:pb-6 md:pb-8 z-30">
             {data?.keywords?.length > 0 && (
               <div className="mb-6">
                 <h2 className="text-base sm:text-lg font-semibold text-white mb-2 sm:mb-3">
@@ -186,44 +186,6 @@ export default function ArticleDetail() {
               </div>
             )}
 
-            {/* Key Information Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 max-w-full lg:max-w-220 mb-6 sm:mb-8 font-bricolage">
-              {data?.experimental_factors?.organism && (
-                <div className="flex flex-col justify-center py-3 sm:py-4 pl-3 sm:pl-4 pr-3 rounded-2xl sm:rounded-[25px] shadow-xl backdrop-blur-[10px] border border-white/20 bg-blue-400/30">
-                  <div className="flex flex-row items-center gap-2 mb-1">
-                    <Dna className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                    <h3 className="font-normal text-lg sm:text-xl text-white">Organism</h3>
-                  </div>
-                  <p className="text-sm sm:text-base text-white font-normal break-words">
-                    {data.experimental_factors.organism}
-                  </p>
-                </div>
-              )}
-
-              {data?.experimental_factors?.tissue_list?.length > 0 && (
-                <div className="flex flex-col justify-center py-3 sm:py-4 pl-3 sm:pl-4 pr-3 rounded-2xl sm:rounded-[25px] shadow-xl backdrop-blur-[10px] border border-white/20 bg-green-500/50">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Layers className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                    <h3 className="font-normal text-lg sm:text-xl text-white">Tissue</h3>
-                  </div>
-                  <p className="text-sm sm:text-base text-white break-words">
-                    {data.experimental_factors.tissue_list.join(", ")}
-                  </p>
-                </div>
-              )}
-
-              {data?.experimental_factors?.treatment_list?.length > 0 && (
-                <div className="flex flex-col justify-center py-3 sm:py-4 pl-3 sm:pl-4 pr-3 rounded-2xl sm:rounded-[25px] shadow-xl backdrop-blur-[10px] border border-white/20 bg-pink-500/50">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Microscope className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                    <h3 className="font-normal text-lg sm:text-xl text-white">Treatment</h3>
-                  </div>
-                  <p className="text-sm sm:text-base text-white break-words">
-                    {data.experimental_factors.treatment_list.join(", ")}
-                  </p>
-                </div>
-              )}
-            </div>
 
             {/* Tabs Navigation */}
             <div className="border-b border-gray-200 mb-4 sm:mb-6 -mx-4 sm:mx-0">
@@ -398,15 +360,53 @@ export default function ArticleDetail() {
                   )}
                 </div>
 
-                <div className="hidden lg:flex items-start justify-center pt-8">
+                {/* <div className="hidden lg:flex items-start justify-center pt-8">
                   <img 
                     src="/src/images/organism/molecule.png" 
                     alt="Molecule visualization" 
                     className="w-full max-w-[450px] opacity-60 drop-shadow-lg"
                   />
+                </div> */}
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-3 sm:gap-4 max-w-full lg:max-w-120 mb-6 sm:mb-8 font-bricolage">
+                    {data?.experimental_factors?.organism && (
+                        <div className="flex flex-col justify-center py-3 sm:py-4 pl-3 sm:pl-4 pr-3 rounded-2xl sm:rounded-[25px] shadow-xl backdrop-blur-[10px] border border-white/20 bg-blue-400/30">
+                        <div className="flex flex-row items-center gap-2 mb-1">
+                            <Dna className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                            <h3 className="font-normal text-lg sm:text-xl text-white">Organism</h3>
+                        </div>
+                        <p className="text-sm sm:text-base text-white font-normal break-words">
+                            {data.experimental_factors.organism}
+                        </p>
+                        </div>
+                    )}
+
+                    {data?.experimental_factors?.tissue_list?.length > 0 && (
+                        <div className="flex flex-col justify-center py-3 sm:py-4 pl-3 sm:pl-4 pr-3 rounded-2xl sm:rounded-[25px] shadow-xl backdrop-blur-[10px] border border-white/20 bg-green-500/50">
+                        <div className="flex items-center gap-2 mb-1">
+                            <Layers className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                            <h3 className="font-normal text-lg sm:text-xl text-white">Tissue</h3>
+                        </div>
+                        <p className="text-sm sm:text-base text-white break-words">
+                            {data.experimental_factors.tissue_list.join(", ")}
+                        </p>
+                        </div>
+                    )}
+
+                    {data?.experimental_factors?.treatment_list?.length > 0 && (
+                        <div className="flex flex-col justify-center py-3 sm:py-4 pl-3 sm:pl-4 pr-3 rounded-2xl sm:rounded-[25px] shadow-xl backdrop-blur-[10px] border border-white/20 bg-pink-500/50">
+                        <div className="flex items-center gap-2 mb-1">
+                            <Microscope className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                            <h3 className="font-normal text-lg sm:text-xl text-white">Treatment</h3>
+                        </div>
+                        <p className="text-sm sm:text-base text-white break-words">
+                            {data.experimental_factors.treatment_list.join(", ")}
+                        </p>
+                        </div>
+                    )}
+                    </div>
                 </div>
-              </div>
-            </div>
+                </div>
 
             {/* Authors */}
             {data?.authors?.length > 0 && (

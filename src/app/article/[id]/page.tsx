@@ -166,7 +166,11 @@ export default function ArticleDetail() {
                     View original
                   </a>
                 )}
-                <ModalRelation article={data} osdMathces={matches}/>
+                <ModalRelation article={data} osdMathces={matches}> 
+                    <div className="p-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                    Open Modal
+                  </div>
+                </ModalRelation>
               </div>
             </div>
           </header>

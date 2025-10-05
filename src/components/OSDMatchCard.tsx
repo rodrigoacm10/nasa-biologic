@@ -1,6 +1,8 @@
+import { ensureOsdById, OSD } from '@/lib/osds-detail'
 import { renderSimilarityDots } from '@/lib/rendersSimilarityStars'
 import { Circle, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
+import { useEffect, useState } from 'react'
 
 export const OSDMatchCard = ({ osd }: any) => {
   const similarityPct = Math.round((osd.similarity ?? 0) * 100)
@@ -16,8 +18,6 @@ export const OSDMatchCard = ({ osd }: any) => {
       : conf === 'moderate'
       ? 'bg-amber-500/30 text-amber-100 border-amber-400/30'
       : 'bg-gray-500/30 text-gray-100 border-gray-400/30'
-
-
 
   return (
             <Link href={`/osds/${osd.osd_id}`}>
@@ -74,7 +74,7 @@ export const OSDMatchCard = ({ osd }: any) => {
               </h3>
             </div>
 
-            <p className="text-xs text-gray-300/90">Mouse</p>
+            <p className="text-xs text-gray-300/90">mouse</p>
           </div>
 
           <div className="bg-[#2C782D] rounded-2xl p-4 flex flex-col gap-2">
@@ -87,11 +87,11 @@ export const OSDMatchCard = ({ osd }: any) => {
                 />
               </div>
               <h3 className="font-medium text-white flex gap items-center">
-                Organisms
+                Description
               </h3>
             </div>
 
-            <p className="text-xs text-gray-300/90">Mouse</p>
+            <p className="text-xs text-gray-300/90">mouse</p>
           </div>
 
           <div className="bg-[#821F63] rounded-2xl p-4 flex flex-col gap-2">

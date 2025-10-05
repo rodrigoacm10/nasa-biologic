@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect, useRef } from 'react'
+import { useState, useMemo, useEffect, useRef, ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { X, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react'
 import { motion } from 'framer-motion'
@@ -13,9 +13,11 @@ type BucketKey = 'A' | 'B' | 'C' | 'D'
 export default function ModalRelation({
   article,
   osdMathces,
+  children
 }: {
   article: Article['article']
   osdMathces: ArticleMatches | null | undefined
+    children: ReactNode
 }) {
   const [open, setOpen] = useState(false)
   const [hoveredOsd, setHoveredOsd] = useState<string | null>(null)
@@ -524,13 +526,13 @@ export default function ModalRelation({
 
   return (
     <>
-      <button
-        disabled={!osdMathces}
-        onClick={() => setOpen(true)}
-        className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition disabled:bg-gray-500 disabled:cursor-help"
+    {/* esse button eu quero q seja um chilcren, mas caso apertar vai abrir um modal, quero por ex colocar uma div, um card e caso aperte, abra o modal */}
+    <div
+        onClick={() => osdMathces && setOpen(true)}
+        className={`${!osdMathces ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
       >
-        Open Modal
-      </button>
+        {children}
+      </div>
       {mounted && modalContent && createPortal(modalContent, document.body)}
     </>
   )

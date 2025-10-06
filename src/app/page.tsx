@@ -172,12 +172,25 @@ export default function UnifiedCatalogPage() {
 
     try {
       const page = params.page || (resetPage ? 1 : articlesPage);
-      const queryParams = { ...params, page, limit: PAGE_SIZE };
+      
+      // Converte arrays de filtros para strings separadas por vírgula
+      const queryParams: any = { page, limit: PAGE_SIZE };
+      if (params.q) queryParams.q = params.q;
+      
+      Object.keys(params).forEach((key) => {
+        if (key !== 'q' && key !== 'page') {
+          const value = params[key];
+          if (Array.isArray(value) && value.length > 0) {
+            queryParams[key] = value.join(',');
+          } else if (value && !Array.isArray(value)) {
+            queryParams[key] = value;
+          }
+        }
+      });
+
       const queryString = new URLSearchParams(
         Object.entries(queryParams)
-          .filter(
-            ([_, v]) => v !== undefined && v !== null && v.toString() !== ""
-          )
+          .filter(([_, v]) => v !== undefined && v !== null && v.toString() !== "")
           .map(([k, v]) => [k, String(v)])
       ).toString();
 
@@ -211,13 +224,14 @@ export default function UnifiedCatalogPage() {
 
   const filterOSDs = (osds: OSD[], params: any) => {
     const q = params.q?.toLowerCase() || "";
-    const org = params.organism?.toLowerCase() || "";
-    const mission = params.mission?.toLowerCase() || "";
-    const factor = params.factor?.toLowerCase() || "";
-    const assayType = params.assayType?.toLowerCase() || "";
-    const platform = params.platform?.toLowerCase() || "";
+    const organisms = Array.isArray(params.organism) ? params.organism : (params.organism ? [params.organism] : []);
+    const missions = Array.isArray(params.mission) ? params.mission : (params.mission ? [params.mission] : []);
+    const factors = Array.isArray(params.factor) ? params.factor : (params.factor ? [params.factor] : []);
+    const assayTypes = Array.isArray(params.assayType) ? params.assayType : (params.assayType ? [params.assayType] : []);
+    const platforms = Array.isArray(params.platform) ? params.platform : (params.platform ? [params.platform] : []);
 
     return osds.filter((osd) => {
+      // Text search
       if (q) {
         const blob = [
           osd.investigation?.id,
@@ -228,37 +242,55 @@ export default function UnifiedCatalogPage() {
           .toLowerCase();
         if (!blob.includes(q)) return false;
       }
-      if (
-        org &&
-        !osd.study?.samples?.some((s) =>
-          s.characteristics?.Organism?.toLowerCase().includes(org)
-        )
-      )
-        return false;
-      if (
-        mission &&
-        !osd.investigation?.mission?.name?.toLowerCase().includes(mission)
-      )
-        return false;
-      if (factor) {
-        const hasF = [
+
+      // Organism filter
+      if (organisms.length > 0) {
+        const hasOrganism = osd.study?.samples?.some((s) =>
+          organisms.some((org: string) =>
+            s.characteristics?.Organism?.toLowerCase().includes(org.toLowerCase())
+          )
+        );
+        if (!hasOrganism) return false;
+      }
+
+      // Mission filter
+      if (missions.length > 0) {
+        const hasMission = missions.some((mission: string) =>
+          osd.investigation?.mission?.name?.toLowerCase().includes(mission.toLowerCase())
+        );
+        if (!hasMission) return false;
+      }
+
+      // Factor filter
+      if (factors.length > 0) {
+        const allFactors = [
           ...(osd.investigation?.factors || []),
           ...((osd.study?.samples || []).flatMap((s) =>
             Object.values(s.factors || {})
           ) as string[]),
-        ].some((f) => f?.toString().toLowerCase().includes(factor));
-        if (!hasF) return false;
+        ];
+        const hasFactor = allFactors.some((f) =>
+          factors.some((factor: string) => f?.toString().toLowerCase().includes(factor.toLowerCase()))
+        );
+        if (!hasFactor) return false;
       }
-      if (
-        assayType &&
-        !osd.assays?.some((a) => a.type?.toLowerCase().includes(assayType))
-      )
-        return false;
-      if (
-        platform &&
-        !osd.assays?.some((a) => a.platform?.toLowerCase().includes(platform))
-      )
-        return false;
+
+      // Assay Type filter
+      if (assayTypes.length > 0) {
+        const hasAssayType = osd.assays?.some((a) =>
+          assayTypes.some((type: string) => a.type?.toLowerCase().includes(type.toLowerCase()))
+        );
+        if (!hasAssayType) return false;
+      }
+
+      // Platform filter
+      if (platforms.length > 0) {
+        const hasPlatform = osd.assays?.some((a) =>
+          platforms.some((platform: string) => a.platform?.toLowerCase().includes(platform.toLowerCase()))
+        );
+        if (!hasPlatform) return false;
+      }
+
       return true;
     });
   };
@@ -378,9 +410,11 @@ export default function UnifiedCatalogPage() {
         ]
       : [];
 
-  const activeFilterCount = Object.values(filters).filter(
-    (v) => v && v !== ""
-  ).length;
+  // Conta filtros ativos (arrays com pelo menos 1 item)
+  const activeFilterCount = Object.values(filters).filter((v) => {
+    if (Array.isArray(v)) return v.length > 0;
+    return v && v !== "";
+  }).length;
 
   return (
     <div className="min-h-screen bg-[url('/src/images/background/test.png')] bg-fixed bg-cover bg-center">

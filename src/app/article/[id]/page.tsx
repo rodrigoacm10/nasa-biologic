@@ -110,17 +110,12 @@ export default function ArticleDetail() {
 
   const { article: data, matches } = article
 
-  console.log('Article ->', data)
-  console.log('MATches -><>', matches)
-
   const tabs = [
     { id: 'overview', label: 'Overview', icon: BookOpen },
     { id: 'methods', label: 'Methods', icon: Beaker },
     { id: 'results', label: 'Results', icon: FileText },
     { id: 'experimental', label: 'Experimental', icon: FlaskConical },
   ]
-
-  console.log('DATA -><>')
 
   const hasMatches = matches?.osd_matches && matches.osd_matches.length > 0
 
@@ -167,8 +162,8 @@ export default function ArticleDetail() {
                   </a>
                 )}
                 <ModalRelation article={data} osdMathces={matches}> 
-                    <div className="p-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
-                    Open Modal
+                    <div className="px-3 py-2 bg-blue-600/40 text-white rounded-lg hover:bg-blue-700/60 border border-gray-500/30 transition">
+                    Open Match Map
                   </div>
                 </ModalRelation>
               </div>
@@ -382,9 +377,9 @@ export default function ArticleDetail() {
                   />
                 </div> */}
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-3 sm:gap-4 max-w-full lg:max-w-120 mb-6 sm:mb-8 font-bricolage">
+                <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-3 sm:gap-4 max-w-full lg:max-w-120 max-h-120 mb-6 sm:mb-8 font-bricolage">
                   {data?.experimental_factors?.organism && (
-                    <div className="flex flex-col justify-center py-3 sm:py-4 pl-3 sm:pl-4 pr-3 rounded-2xl sm:rounded-[25px] shadow-xl backdrop-blur-[10px] border border-white/20 bg-blue-400/30">
+                    <div className="flex flex-col justify-center max-h-32 py-3 sm:py-4 pl-3 sm:pl-4 pr-3 rounded-2xl sm:rounded-[25px] shadow-xl backdrop-blur-[10px] border border-white/20 bg-blue-400/30">
                       <div className="flex flex-row items-center gap-2 mb-1">
                         <Dna className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                         <h3 className="font-normal text-lg sm:text-xl text-white">
@@ -393,12 +388,17 @@ export default function ArticleDetail() {
                       </div>
                       <p className="text-sm sm:text-base text-white font-normal break-words">
                         {data.experimental_factors.organism}
+                        {data.experimental_factors.organism.toLowerCase() !== data.experimental_factors.organism_raw.toLowerCase() && (
+                            <span className="text-sm text-gray-400 ml-2">
+                            ({data.experimental_factors.organism_raw})
+                            </span>
+                        )}
                       </p>
                     </div>
                   )}
 
                   {data?.experimental_factors?.tissue_list?.length > 0 && (
-                    <div className="flex flex-col justify-center py-3 sm:py-4 pl-3 sm:pl-4 pr-3 rounded-2xl sm:rounded-[25px] shadow-xl backdrop-blur-[10px] border border-white/20 bg-green-500/50">
+                    <div className="flex flex-col justify-center max-h-32 py-3 sm:py-4 pl-3 sm:pl-4 pr-3 rounded-2xl sm:rounded-[25px] shadow-xl backdrop-blur-[10px] border border-white/20 bg-green-500/50">
                       <div className="flex items-center gap-2 mb-1">
                         <Layers className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                         <h3 className="font-normal text-lg sm:text-xl text-white">
@@ -412,7 +412,7 @@ export default function ArticleDetail() {
                   )}
 
                   {data?.experimental_factors?.treatment_list?.length > 0 && (
-                    <div className="flex flex-col justify-center py-3 sm:py-4 pl-3 sm:pl-4 pr-3 rounded-2xl sm:rounded-[25px] shadow-xl backdrop-blur-[10px] border border-white/20 bg-pink-500/50">
+                    <div className="flex flex-col justify-center max-h-32 py-3 sm:py-4 pl-3 sm:pl-4 pr-3 rounded-2xl sm:rounded-[25px] shadow-xl backdrop-blur-[10px] border border-white/20 bg-pink-500/50">
                       <div className="flex items-center gap-2 mb-1">
                         <Microscope className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                         <h3 className="font-normal text-lg sm:text-xl text-white">

@@ -5,10 +5,10 @@ import {
   Search,
   X,
   Filter,
-  ChevronDown,
   Heart,
 } from "lucide-react";
 import SidebarGroupLabel from "@/components/SiderGroupRelations";
+import FilterCheckboxGroup from "@/components/FilterCheckboxGroup";
 
 type CatalogType = "articles" | "osds" | "vaults" | "matches";
 
@@ -32,14 +32,6 @@ interface SidebarContentProps {
   activeFilterCount: number;
 }
 
-const colorMap: any = {
-  blue: { dot: "bg-blue-400" },
-  green: { dot: "bg-green-400" },
-  pink: { dot: "bg-pink-400" },
-  purple: { dot: "bg-purple-400" },
-  amber: { dot: "bg-amber-400" },
-};
-
 export default function SidebarContent({
   activeTab,
   setActiveTab,
@@ -55,6 +47,13 @@ export default function SidebarContent({
   activeFilterCount,
 }: SidebarContentProps) {
   const [showFilters, setShowFilters] = useState(false);
+
+  const handleFilterChange = (key: string, values: string[]) => {
+    setFilters({
+      ...filters,
+      [key]: values.length > 0 ? values : undefined,
+    });
+  };
 
   return (
     <div className="space-y-4 sm:space-y-6 pb-20 px-2">
@@ -125,52 +124,33 @@ export default function SidebarContent({
 
           {/* Filter Fields */}
           {showFilters && (
-            <div className="space-y-4 p-4 sm:p-5 rounded-2xl backdrop-blur-xl bg-white/5 border border-white/10 animate-in fade-in slide-in-from-left duration-200">
+            <div className="space-y-3 p-4 sm:p-5 rounded-2xl backdrop-blur-xl bg-white/5 border border-white/10 animate-in fade-in slide-in-from-left duration-200">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-xs font-bold text-white uppercase tracking-wide flex items-center gap-2">
+                <h3 className="text-xs font-bold text-white uppercase tracking-wide">
                   Advanced Filters
                 </h3>
               </div>
 
-              {filterFields.map((field: any) => {
-                const colors = colorMap[field.color];
-                return (
-                  <div key={field.key} className="space-y-2">
-                    <label className="text-xs font-semibold text-gray-300 uppercase tracking-wide flex items-center gap-2">
-                      <div
-                        className={`w-2 h-2 rounded-full ${colors.dot}`}
-                      ></div>
-                      {field.label} ({field.options?.length || 0})
-                    </label>
-                    <div className="relative">
-                      <select
-                        value={filters[field.key] || ""}
-                        onChange={(e) =>
-                          setFilters({
-                            ...filters,
-                            [field.key]: e.target.value || undefined,
-                          })
-                        }
-                        className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50 appearance-none cursor-pointer"
-                      >
-                        <option value="" className="bg-gray-800">
-                          All {field.label.toLowerCase()}s
-                        </option>
-                        {field.options?.map((opt: string) => (
-                          <option key={opt} value={opt} className="bg-gray-800">
-                            {opt}
-                          </option>
-                        ))}
-                      </select>
-                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                    </div>
-                  </div>
-                );
-              })}
+              {filterFields.map((field) => (
+                <FilterCheckboxGroup
+                  key={field.key}
+                  label={field.label}
+                  color={field.color}
+                  options={field.options}
+                  selectedValues={
+                    Array.isArray(filters[field.key])
+                      ? filters[field.key]
+                      : filters[field.key]
+                      ? [filters[field.key]]
+                      : []
+                  }
+                  onChange={(values) => handleFilterChange(field.key, values)}
+                />
+              ))}
 
               <button
                 onClick={handleSearch}
-                className="w-full py-3 rounded-xl bg-gradient-to-br from-blue-500 to-purple-500 text-white font-semibold text-sm hover:from-blue-600 hover:to-purple-600 transition-all shadow-lg"
+                className="w-full py-3 rounded-xl bg-gradient-to-br from-blue-500 to-purple-500 text-white font-semibold text-sm hover:from-blue-600 hover:to-purple-600 transition-all shadow-lg mt-4"
               >
                 Apply Filters
               </button>

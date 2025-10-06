@@ -7,6 +7,7 @@ import VaultCard from "./VaultCard";
 import type { VaultProps } from "./VaultCard";
 import { ensureAllOsdsCached } from "@/lib/osds-cache";
 import type { Article } from "@/@types/article";
+import { ensureAllMatchesCached } from '@/lib/allmatches-cache';
 
 const ResponsiveContainer = dynamic(
   () => import("recharts").then((m) => m.ResponsiveContainer),
@@ -150,29 +151,27 @@ export default function VaultsTab({
   const [minScore, setMinScore] = useState(60);
 
   useEffect(() => {
-    (async () => {
-      setLoading(true);
-      try {
-        const res = await fetch(matchesUrl).catch(() =>
-          fetch("/api/all_matches")
-        );
-        if (!res || !res.ok) throw new Error("Cannot load all_matches.json");
-        const matches: AllMatchesEntry[] = await res.json();
-        setAllMatches(matches || []);
+  (async () => {
+    setLoading(true);
+    try {
+      // 1) Matches com cache local (IndexedDB)
+      const matches = await ensureAllMatchesCached(matchesUrl);
+      setAllMatches(matches as any || []);
 
-        const aRes = await fetch("/api/articles?limit=9999");
-        const aJson = await aRes.json();
-        setAllArticles(aJson.articles || []);
+      // 2) Artigos e OSDs (como antes)
+      const aRes = await fetch('/api/articles?limit=9999');
+      const aJson = await aRes.json();
+      setAllArticles(aJson.articles || []);
 
-        const osds = await ensureAllOsdsCached("/api/osds");
-        setAllOsds(Array.isArray(osds) ? osds : []);
-      } catch (e: any) {
-        setError(e?.message || "Failed to load Vaults");
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [matchesUrl]);
+      const osds = await ensureAllOsdsCached('/api/osds');
+      setAllOsds(Array.isArray(osds) ? osds : []);
+    } catch (e: any) {
+      setError(e?.message || 'Failed to load Vaults');
+    } finally {
+      setLoading(false);
+    }
+  })();
+}, [matchesUrl]);
 
   const { vaults, organisms, treatments, years } = useMemo(() => {
     const artIndex = new Map<string, Article>();

@@ -172,16 +172,16 @@ export default function UnifiedCatalogPage() {
 
     try {
       const page = params.page || (resetPage ? 1 : articlesPage);
-      
+
       // Converte arrays de filtros para strings separadas por vírgula
       const queryParams: any = { page, limit: PAGE_SIZE };
       if (params.q) queryParams.q = params.q;
-      
+
       Object.keys(params).forEach((key) => {
-        if (key !== 'q' && key !== 'page') {
+        if (key !== "q" && key !== "page") {
           const value = params[key];
           if (Array.isArray(value) && value.length > 0) {
-            queryParams[key] = value.join(',');
+            queryParams[key] = value.join(",");
           } else if (value && !Array.isArray(value)) {
             queryParams[key] = value;
           }
@@ -190,7 +190,9 @@ export default function UnifiedCatalogPage() {
 
       const queryString = new URLSearchParams(
         Object.entries(queryParams)
-          .filter(([_, v]) => v !== undefined && v !== null && v.toString() !== "")
+          .filter(
+            ([_, v]) => v !== undefined && v !== null && v.toString() !== ""
+          )
           .map(([k, v]) => [k, String(v)])
       ).toString();
 
@@ -224,11 +226,31 @@ export default function UnifiedCatalogPage() {
 
   const filterOSDs = (osds: OSD[], params: any) => {
     const q = params.q?.toLowerCase() || "";
-    const organisms = Array.isArray(params.organism) ? params.organism : (params.organism ? [params.organism] : []);
-    const missions = Array.isArray(params.mission) ? params.mission : (params.mission ? [params.mission] : []);
-    const factors = Array.isArray(params.factor) ? params.factor : (params.factor ? [params.factor] : []);
-    const assayTypes = Array.isArray(params.assayType) ? params.assayType : (params.assayType ? [params.assayType] : []);
-    const platforms = Array.isArray(params.platform) ? params.platform : (params.platform ? [params.platform] : []);
+    const organisms = Array.isArray(params.organism)
+      ? params.organism
+      : params.organism
+      ? [params.organism]
+      : [];
+    const missions = Array.isArray(params.mission)
+      ? params.mission
+      : params.mission
+      ? [params.mission]
+      : [];
+    const factors = Array.isArray(params.factor)
+      ? params.factor
+      : params.factor
+      ? [params.factor]
+      : [];
+    const assayTypes = Array.isArray(params.assayType)
+      ? params.assayType
+      : params.assayType
+      ? [params.assayType]
+      : [];
+    const platforms = Array.isArray(params.platform)
+      ? params.platform
+      : params.platform
+      ? [params.platform]
+      : [];
 
     return osds.filter((osd) => {
       // Text search
@@ -247,7 +269,9 @@ export default function UnifiedCatalogPage() {
       if (organisms.length > 0) {
         const hasOrganism = osd.study?.samples?.some((s) =>
           organisms.some((org: string) =>
-            s.characteristics?.Organism?.toLowerCase().includes(org.toLowerCase())
+            s.characteristics?.Organism?.toLowerCase().includes(
+              org.toLowerCase()
+            )
           )
         );
         if (!hasOrganism) return false;
@@ -256,7 +280,9 @@ export default function UnifiedCatalogPage() {
       // Mission filter
       if (missions.length > 0) {
         const hasMission = missions.some((mission: string) =>
-          osd.investigation?.mission?.name?.toLowerCase().includes(mission.toLowerCase())
+          osd.investigation?.mission?.name
+            ?.toLowerCase()
+            .includes(mission.toLowerCase())
         );
         if (!hasMission) return false;
       }
@@ -270,7 +296,9 @@ export default function UnifiedCatalogPage() {
           ) as string[]),
         ];
         const hasFactor = allFactors.some((f) =>
-          factors.some((factor: string) => f?.toString().toLowerCase().includes(factor.toLowerCase()))
+          factors.some((factor: string) =>
+            f?.toString().toLowerCase().includes(factor.toLowerCase())
+          )
         );
         if (!hasFactor) return false;
       }
@@ -278,7 +306,9 @@ export default function UnifiedCatalogPage() {
       // Assay Type filter
       if (assayTypes.length > 0) {
         const hasAssayType = osd.assays?.some((a) =>
-          assayTypes.some((type: string) => a.type?.toLowerCase().includes(type.toLowerCase()))
+          assayTypes.some((type: string) =>
+            a.type?.toLowerCase().includes(type.toLowerCase())
+          )
         );
         if (!hasAssayType) return false;
       }
@@ -286,7 +316,9 @@ export default function UnifiedCatalogPage() {
       // Platform filter
       if (platforms.length > 0) {
         const hasPlatform = osd.assays?.some((a) =>
-          platforms.some((platform: string) => a.platform?.toLowerCase().includes(platform.toLowerCase()))
+          platforms.some((platform: string) =>
+            a.platform?.toLowerCase().includes(platform.toLowerCase())
+          )
         );
         if (!hasPlatform) return false;
       }

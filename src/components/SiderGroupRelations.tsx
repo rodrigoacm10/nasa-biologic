@@ -1,8 +1,14 @@
-export default function SidebarGroupLabel({ label, accent = 'emerald' }: { label: string; accent?: 'emerald' | 'purple' | 'sky' }) {
+export default function SidebarGroupLabel({
+  label,
+  accent = "emerald",
+}: {
+  label: string;
+  accent?: "emerald" | "purple" | "sky";
+}) {
   const dot = {
-    emerald: 'bg-emerald-400/60',
-    purple: 'bg-purple-400/60',
-    sky: 'bg-sky-400',
+    emerald: "bg-emerald-400/60",
+    purple: "bg-purple-400/60",
+    sky: "bg-sky-400",
   }[accent];
 
   return (

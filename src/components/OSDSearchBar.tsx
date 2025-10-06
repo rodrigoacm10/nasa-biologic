@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useEffect, useState, useRef } from 'react';
-import { Search, Filter, X, ChevronDown } from 'lucide-react';
+import { useEffect, useState, useRef } from "react";
+import { Search, Filter, X, ChevronDown } from "lucide-react";
 
 export type OSDSearchParams = {
   q?: string;
@@ -51,7 +51,7 @@ export default function OSDSearchBar({
     setP(empty);
   };
 
-  const activeCount = Object.values(p).filter(v => v && v !== '').length;
+  const activeCount = Object.values(p).filter((v) => v && v !== "").length;
 
   return (
     <div className="sticky top-0 z-20 backdrop-blur-xl bg-black/40 border-b border-white/10">
@@ -64,8 +64,8 @@ export default function OSDSearchBar({
                 type="text"
                 placeholder="Search by title, description, project..."
                 className="w-full pl-12 pr-4 py-3 sm:py-3.5 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all shadow-lg"
-                value={p.q ?? ''}
-                onChange={e => setP({ ...p, q: e.target.value })}
+                value={p.q ?? ""}
+                onChange={(e) => setP({ ...p, q: e.target.value })}
               />
             </div>
 
@@ -73,8 +73,8 @@ export default function OSDSearchBar({
               onClick={() => setShowFilters(!showFilters)}
               className={`px-5 sm:px-6 py-3 sm:py-3.5 rounded-2xl border transition-all flex items-center justify-center gap-2 font-medium shadow-lg ${
                 showFilters || activeCount > 0
-                  ? 'bg-blue-500/30 border-blue-400/50 text-blue-100 hover:bg-blue-500/40'
-                  : 'bg-white/10 backdrop-blur-md border-white/20 text-gray-200 hover:bg-white/20'
+                  ? "bg-blue-500/30 border-blue-400/50 text-blue-100 hover:bg-blue-500/40"
+                  : "bg-white/10 backdrop-blur-md border-white/20 text-gray-200 hover:bg-white/20"
               }`}
             >
               <Filter className="w-5 h-5" />
@@ -97,12 +97,20 @@ export default function OSDSearchBar({
                   </label>
                   <div className="relative">
                     <select
-                      value={p.organism ?? ''}
-                      onChange={e => setP({ ...p, organism: e.target.value || undefined })}
+                      value={p.organism ?? ""}
+                      onChange={(e) =>
+                        setP({ ...p, organism: e.target.value || undefined })
+                      }
                       className="w-full px-4 py-2.5 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 appearance-none cursor-pointer transition-all hover:bg-white/15"
                     >
-                      <option value="" className="bg-gray-800">All organisms</option>
-                      {available.organisms.map(x => <option key={x} value={x} className="bg-gray-800">{x}</option>)}
+                      <option value="" className="bg-gray-800">
+                        All organisms
+                      </option>
+                      {available.organisms.map((x) => (
+                        <option key={x} value={x} className="bg-gray-800">
+                          {x}
+                        </option>
+                      ))}
                     </select>
                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                   </div>
@@ -115,12 +123,20 @@ export default function OSDSearchBar({
                   </label>
                   <div className="relative">
                     <select
-                      value={p.mission ?? ''}
-                      onChange={e => setP({ ...p, mission: e.target.value || undefined })}
+                      value={p.mission ?? ""}
+                      onChange={(e) =>
+                        setP({ ...p, mission: e.target.value || undefined })
+                      }
                       className="w-full px-4 py-2.5 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500/50 appearance-none cursor-pointer transition-all hover:bg-white/15"
                     >
-                      <option value="" className="bg-gray-800">All missions</option>
-                      {available.missions.map(x => <option key={x} value={x} className="bg-gray-800">{x}</option>)}
+                      <option value="" className="bg-gray-800">
+                        All missions
+                      </option>
+                      {available.missions.map((x) => (
+                        <option key={x} value={x} className="bg-gray-800">
+                          {x}
+                        </option>
+                      ))}
                     </select>
                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                   </div>
@@ -133,12 +149,20 @@ export default function OSDSearchBar({
                   </label>
                   <div className="relative">
                     <select
-                      value={p.factor ?? ''}
-                      onChange={e => setP({ ...p, factor: e.target.value || undefined })}
+                      value={p.factor ?? ""}
+                      onChange={(e) =>
+                        setP({ ...p, factor: e.target.value || undefined })
+                      }
                       className="w-full px-4 py-2.5 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-pink-500/50 appearance-none cursor-pointer transition-all hover:bg-white/15"
                     >
-                      <option value="" className="bg-gray-800">All factors</option>
-                      {available.factors.map(x => <option key={x} value={x} className="bg-gray-800">{x}</option>)}
+                      <option value="" className="bg-gray-800">
+                        All factors
+                      </option>
+                      {available.factors.map((x) => (
+                        <option key={x} value={x} className="bg-gray-800">
+                          {x}
+                        </option>
+                      ))}
                     </select>
                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                   </div>
@@ -151,12 +175,20 @@ export default function OSDSearchBar({
                   </label>
                   <div className="relative">
                     <select
-                      value={p.assayType ?? ''}
-                      onChange={e => setP({ ...p, assayType: e.target.value || undefined })}
+                      value={p.assayType ?? ""}
+                      onChange={(e) =>
+                        setP({ ...p, assayType: e.target.value || undefined })
+                      }
                       className="w-full px-4 py-2.5 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50 appearance-none cursor-pointer transition-all hover:bg-white/15"
                     >
-                      <option value="" className="bg-gray-800">All assay types</option>
-                      {available.assayTypes.map(x => <option key={x} value={x} className="bg-gray-800">{x}</option>)}
+                      <option value="" className="bg-gray-800">
+                        All assay types
+                      </option>
+                      {available.assayTypes.map((x) => (
+                        <option key={x} value={x} className="bg-gray-800">
+                          {x}
+                        </option>
+                      ))}
                     </select>
                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                   </div>
@@ -169,12 +201,20 @@ export default function OSDSearchBar({
                   </label>
                   <div className="relative">
                     <select
-                      value={p.platform ?? ''}
-                      onChange={e => setP({ ...p, platform: e.target.value || undefined })}
+                      value={p.platform ?? ""}
+                      onChange={(e) =>
+                        setP({ ...p, platform: e.target.value || undefined })
+                      }
                       className="w-full px-4 py-2.5 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 appearance-none cursor-pointer transition-all hover:bg-white/15"
                     >
-                      <option value="" className="bg-gray-800">All platforms</option>
-                      {available.platforms.map(x => <option key={x} value={x} className="bg-gray-800">{x}</option>)}
+                      <option value="" className="bg-gray-800">
+                        All platforms
+                      </option>
+                      {available.platforms.map((x) => (
+                        <option key={x} value={x} className="bg-gray-800">
+                          {x}
+                        </option>
+                      ))}
                     </select>
                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                   </div>
@@ -187,12 +227,20 @@ export default function OSDSearchBar({
                   </label>
                   <div className="relative">
                     <select
-                      value={p.center ?? ''}
-                      onChange={e => setP({ ...p, center: e.target.value || undefined })}
+                      value={p.center ?? ""}
+                      onChange={(e) =>
+                        setP({ ...p, center: e.target.value || undefined })
+                      }
                       className="w-full px-4 py-2.5 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50 appearance-none cursor-pointer transition-all hover:bg-white/15"
                     >
-                      <option value="" className="bg-gray-800">All centers</option>
-                      {available.centers.map(x => <option key={x} value={x} className="bg-gray-800">{x}</option>)}
+                      <option value="" className="bg-gray-800">
+                        All centers
+                      </option>
+                      {available.centers.map((x) => (
+                        <option key={x} value={x} className="bg-gray-800">
+                          {x}
+                        </option>
+                      ))}
                     </select>
                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                   </div>
@@ -217,12 +265,14 @@ export default function OSDSearchBar({
         {activeCount > 0 && (
           <div className="flex flex-wrap gap-2 mt-4">
             {Object.entries(p).map(([key, value]) =>
-              value && value !== '' ? (
+              value && value !== "" ? (
                 <span
                   key={key}
                   className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-500/30 backdrop-blur-md border border-blue-400/30 text-blue-100 text-sm rounded-full shadow-lg"
                 >
-                  <span className="text-xs font-semibold uppercase opacity-70">{key}:</span>
+                  <span className="text-xs font-semibold uppercase opacity-70">
+                    {key}:
+                  </span>
                   <span className="font-medium">{value}</span>
                   <button
                     onClick={() => setP({ ...p, [key]: undefined })}

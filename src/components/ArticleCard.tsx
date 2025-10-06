@@ -1,9 +1,16 @@
-'use client';
+"use client";
 
-import { Article } from '@/@types/article';
-import { Calendar, Users, Dna, Microscope, ChevronRight, Layers } from 'lucide-react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { Article } from "@/@types/article";
+import {
+  Calendar,
+  Users,
+  Dna,
+  Microscope,
+  ChevronRight,
+  Layers,
+} from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 interface ArticleCardProps {
   article: Article;
@@ -17,30 +24,28 @@ export default function ArticleCard({ article, index }: ArticleCardProps) {
 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    
-    
+
     const card = e.currentTarget as HTMLElement;
     const rect = card.getBoundingClientRect();
-    
-    
-    sessionStorage.setItem('cardAnimation', JSON.stringify({
-      top: rect.top,
-      left: rect.left,
-      width: rect.width,
-      height: rect.height,
-    }));
 
-    
-    card.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
-    card.style.transform = 'scale(0.98)';
+    sessionStorage.setItem(
+      "cardAnimation",
+      JSON.stringify({
+        top: rect.top,
+        left: rect.left,
+        width: rect.width,
+        height: rect.height,
+      })
+    );
 
-    
-    if ('startViewTransition' in document) {
+    card.style.transition = "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)";
+    card.style.transform = "scale(0.98)";
+
+    if ("startViewTransition" in document) {
       (document as any).startViewTransition(() => {
         router.push(`/article/${articleId}`);
       });
     } else {
-      
       setTimeout(() => {
         router.push(`/article/${articleId}`);
       }, 300);
@@ -55,8 +60,8 @@ export default function ArticleCard({ article, index }: ArticleCardProps) {
     >
       {/* Gradient overlay on hover */}
       <div className="absolute inset-0 bg-gradient-to-br from-blue-500/0 to-purple-500/0 group-hover:from-blue-500/10 group-hover:to-purple-500/10 transition-all duration-500 pointer-events-none" />
-      
-        <div className="relative p-5 sm:p-6 space-y-4 flex-1 flex flex-col">
+
+      <div className="relative p-5 sm:p-6 space-y-4 flex-1 flex flex-col">
         {/* Title */}
         <div>
           <h3 className="text-base sm:text-lg font-bold text-white line-clamp-2 group-hover:text-blue-300 transition-colors leading-tight">
@@ -87,28 +92,30 @@ export default function ArticleCard({ article, index }: ArticleCardProps) {
                 <Dna className="w-3.5 h-3.5 text-blue-200" />
               </div>
               <span className="text-xs sm:text-sm text-white font-medium truncate">
-              {data.experimental_factors.organism}
-              {data.experimental_factors.organism.toLowerCase() !== data.experimental_factors.organism_raw.toLowerCase() && (
-                <span className="text-xs text-gray-400 ml-2">
-                  ({data.experimental_factors.organism_raw})
-                </span>
-              )}
-            </span>
+                {data.experimental_factors.organism}
+                {data.experimental_factors.organism.toLowerCase() !==
+                  data.experimental_factors.organism_raw.toLowerCase() && (
+                  <span className="text-xs text-gray-400 ml-2">
+                    ({data.experimental_factors.organism_raw})
+                  </span>
+                )}
+              </span>
             </div>
           )}
-          
+
           {data.experimental_factors.tissue_list.length > 0 && (
             <div className="flex items-center gap-2">
               <div className="p-1.5 rounded-lg bg-green-500/30">
                 <Layers className="w-3.5 h-3.5 text-green-200" />
               </div>
               <span className="text-xs sm:text-sm text-gray-300 truncate">
-                {data.experimental_factors.tissue_list.slice(0, 2).join(', ')}
-                {data.experimental_factors.tissue_list.length > 2 && ` +${data.experimental_factors.tissue_list.length - 2}`}
+                {data.experimental_factors.tissue_list.slice(0, 2).join(", ")}
+                {data.experimental_factors.tissue_list.length > 2 &&
+                  ` +${data.experimental_factors.tissue_list.length - 2}`}
               </span>
             </div>
           )}
-          
+
           {data.experimental_factors.treatment_list.length > 0 && (
             <div className="flex items-center gap-2">
               <div className="p-1.5 rounded-lg bg-purple-500/30">
@@ -116,7 +123,8 @@ export default function ArticleCard({ article, index }: ArticleCardProps) {
               </div>
               <span className="text-xs sm:text-sm text-gray-300 truncate">
                 {data.experimental_factors.treatment_list[0]}
-                {data.experimental_factors.treatment_list.length > 1 && ` +${data.experimental_factors.treatment_list.length - 1}`}
+                {data.experimental_factors.treatment_list.length > 1 &&
+                  ` +${data.experimental_factors.treatment_list.length - 1}`}
               </span>
             </div>
           )}
@@ -142,7 +150,9 @@ export default function ArticleCard({ article, index }: ArticleCardProps) {
         )}
 
         {/* Footer */}
-        <div className="flex items-center justify-between pt-3 border-t border-white/10 mt-auto"> {/* 👈 mt-auto empurra o footer pro fim */}
+        <div className="flex items-center justify-between pt-3 border-t border-white/10 mt-auto">
+          {" "}
+          {/* 👈 mt-auto empurra o footer pro fim */}
           {data.technologies.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {data.technologies.slice(0, 2).map((tech, idx) => (

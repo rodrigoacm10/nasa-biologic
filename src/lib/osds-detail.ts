@@ -1,9 +1,8 @@
-// lib/osds-detail.ts
-import { idbGet, idbSet } from './idb';
-import { ensureAllOsdsCached } from './osds-cache';
+import { idbGet, idbSet } from "./idb";
+import { ensureAllOsdsCached } from "./osds-cache";
 
-const KEY_ALL_DATA = 'all_osds:data';
-const KEY_OSD_PREFIX = 'osd:'; // osd:OSD-123
+const KEY_ALL_DATA = "all_osds:data";
+const KEY_OSD_PREFIX = "osd:";
 
 export interface OSDContact {
   first_name?: string;
@@ -19,26 +18,45 @@ export type OSD = {
     id: string;
     title?: string;
     description?: string;
-    mission?: { name?: string; start_date?: string; end_date?: string; link?: string };
+    mission?: {
+      name?: string;
+      start_date?: string;
+      end_date?: string;
+      link?: string;
+    };
     project?: {
-        funding: string; identifier?: string; title?: string; type?: string; link?: string; managing_center?: string 
-};
+      funding: string;
+      identifier?: string;
+      title?: string;
+      type?: string;
+      link?: string;
+      managing_center?: string;
+    };
     factors?: string[];
-    publications?: Array<{ authors?: string[]; title?: string; doi?: string; link?: string }>;
+    publications?: Array<{
+      authors?: string[];
+      title?: string;
+      doi?: string;
+      link?: string;
+    }>;
   };
   study?: { samples?: any[] };
-  assays?: Array<{ type?: string; platform?: string; files?: { raw?: string[]; processed?: string[]; reports?: string[] } }>;
+  assays?: Array<{
+    type?: string;
+    platform?: string;
+    files?: { raw?: string[]; processed?: string[]; reports?: string[] };
+  }>;
 };
 
 function normId(id: string) {
-  return id.startsWith('OSD-') ? id : `OSD-${id}`;
+  return id.startsWith("OSD-") ? id : `OSD-${id}`;
 }
 
 async function getOsdFromAllCache(id: string): Promise<OSD | null> {
   const all = await idbGet<any[]>(KEY_ALL_DATA);
   if (!Array.isArray(all)) return null;
   const target = normId(id);
-  const hit = all.find(x => x?.investigation?.id === target);
+  const hit = all.find((x) => x?.investigation?.id === target);
   return hit || null;
 }
 
@@ -59,24 +77,23 @@ async function putOsdIndividual(osd: OSD) {
  * 2) dentro do all_osds:data já no IDB
  * 3) fallback: fetch /api/osds/[id] e cacheia individual
  */
-export async function ensureOsdById(id: string, sourceUrl = '/api/osds'): Promise<OSD | null> {
+export async function ensureOsdById(
+  id: string,
+  sourceUrl = "/api/osds"
+): Promise<OSD | null> {
   const target = normId(id);
 
-  // 1) cache individual
   const c1 = await getOsdIndividual(target);
   if (c1) return c1;
 
-  // 2) procurar dentro do all_osds:data já salvo (sem rede)
   const c2 = await getOsdFromAllCache(target);
   if (c2) {
-    // opcional: espelhar no cache individual para futuros loads mais rápidos
     await putOsdIndividual(c2);
     return c2;
   }
 
-  // 2.1) se não achou, podemos tentar atualizar o all_osds do IDB (HEAD + fetch se mudou)
   try {
-    const all = await ensureAllOsdsCached(sourceUrl); // usa HEAD; só baixa se mudou
+    const all = await ensureAllOsdsCached(sourceUrl);
     if (Array.isArray(all)) {
       const c3 = all.find((x: any) => x?.investigation?.id === target) || null;
       if (c3) {
@@ -84,13 +101,10 @@ export async function ensureOsdById(id: string, sourceUrl = '/api/osds'): Promis
         return c3;
       }
     }
-  } catch {
-    // segue pro fallback individual
-  }
+  } catch {}
 
-  // 3) fallback final: pega a página do item no backend e cacheia
   try {
-    const res = await fetch(`${sourceUrl}/${target}`, { cache: 'no-store' });
+    const res = await fetch(`${sourceUrl}/${target}`, { cache: "no-store" });
     if (!res.ok) return null;
     const osd = await res.json();
     if (osd?.investigation?.id) await putOsdIndividual(osd);

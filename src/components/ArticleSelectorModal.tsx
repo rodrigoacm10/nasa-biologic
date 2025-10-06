@@ -1,92 +1,94 @@
-'use client'
+"use client";
 
-import { useState, useEffect, useRef } from 'react'
-import { createPortal } from 'react-dom'
-import { X, Search, Loader2, FileText } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Article } from '@/@types/article'
+import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
+import { X, Search, Loader2, FileText } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Article } from "@/@types/article";
 
 interface ArticleSelectorModalProps {
-  isOpen: boolean
-  onClose: () => void
-  onSelectArticle: (articleId: string) => void
+  isOpen: boolean;
+  onClose: () => void;
+  onSelectArticle: (articleId: string) => void;
 }
 
 export default function ArticleSelectorModal({
   isOpen,
   onClose,
-  onSelectArticle
+  onSelectArticle,
 }: ArticleSelectorModalProps) {
-  const [mounted, setMounted] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [articles, setArticles] = useState<Article[]>([])
-  const [filteredArticles, setFilteredArticles] = useState<Article[]>([])
-  const [loading, setLoading] = useState(false)
-  const searchInputRef = useRef<HTMLInputElement>(null)
+  const [mounted, setMounted] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [filteredArticles, setFilteredArticles] = useState<Article[]>([]);
+  const [loading, setLoading] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    setMounted(true)
-  }, [])
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
-      fetchArticles()
-      document.body.classList.add('overflow-hidden')
-      setTimeout(() => searchInputRef.current?.focus(), 100)
+      fetchArticles();
+      document.body.classList.add("overflow-hidden");
+      setTimeout(() => searchInputRef.current?.focus(), 100);
     } else {
-      document.body.classList.remove('overflow-hidden')
-      setSearchQuery('')
+      document.body.classList.remove("overflow-hidden");
+      setSearchQuery("");
     }
-    return () => document.body.classList.remove('overflow-hidden')
-  }, [isOpen])
+    return () => document.body.classList.remove("overflow-hidden");
+  }, [isOpen]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    if (isOpen) window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [isOpen, onClose])
+      if (e.key === "Escape") onClose();
+    };
+    if (isOpen) window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isOpen, onClose]);
 
   const fetchArticles = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
-      const response = await fetch('/api/articles?limit=9999')
-      const data = await response.json()
-      setArticles(data.articles || [])
-      setFilteredArticles(data.articles || [])
+      const response = await fetch("/api/articles?limit=9999");
+      const data = await response.json();
+      setArticles(data.articles || []);
+      setFilteredArticles(data.articles || []);
     } catch (error) {
-      console.error('Error fetching articles:', error)
+      console.error("Error fetching articles:", error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
     if (!searchQuery.trim()) {
-      setFilteredArticles(articles)
-      return
+      setFilteredArticles(articles);
+      return;
     }
 
-    const query = searchQuery.toLowerCase()
+    const query = searchQuery.toLowerCase();
     const filtered = articles.filter((article) => {
-      const data = article.article
+      const data = article.article;
       return (
         data.title?.toLowerCase().includes(query) ||
         data.authors?.some((author) => author.toLowerCase().includes(query)) ||
-        data.keywords?.some((keyword) => keyword.toLowerCase().includes(query)) ||
+        data.keywords?.some((keyword) =>
+          keyword.toLowerCase().includes(query)
+        ) ||
         data.experimental_factors?.organism?.toLowerCase().includes(query)
-      )
-    })
-    setFilteredArticles(filtered)
-  }, [searchQuery, articles])
+      );
+    });
+    setFilteredArticles(filtered);
+  }, [searchQuery, articles]);
 
   const handleSelectArticle = (articleId: string) => {
-    onSelectArticle(articleId)
-    onClose()
-  }
+    onSelectArticle(articleId);
+    onClose();
+  };
 
-  if (!mounted || !isOpen) return null
+  if (!mounted || !isOpen) return null;
 
   const modalContent = (
     <div className="fixed inset-0 z-[9999]" role="dialog" aria-modal="true">
@@ -137,7 +139,7 @@ export default function ArticleSelectorModal({
               />
               {searchQuery && (
                 <button
-                  onClick={() => setSearchQuery('')}
+                  onClick={() => setSearchQuery("")}
                   className="absolute right-4 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-white/10"
                 >
                   <X className="w-4 h-4 text-gray-400" />
@@ -145,7 +147,8 @@ export default function ArticleSelectorModal({
               )}
             </div>
             <div className="mt-2 text-sm text-gray-400">
-              {filteredArticles.length} article{filteredArticles.length !== 1 ? 's' : ''} found
+              {filteredArticles.length} article
+              {filteredArticles.length !== 1 ? "s" : ""} found
             </div>
           </div>
 
@@ -165,7 +168,7 @@ export default function ArticleSelectorModal({
               </div>
             ) : (
               filteredArticles.map((article, idx) => {
-                const data = article.article
+                const data = article.article;
                 return (
                   <motion.button
                     key={`${data.title}-${idx}`}
@@ -209,14 +212,14 @@ export default function ArticleSelectorModal({
                       </div>
                     )}
                   </motion.button>
-                )
+                );
               })
             )}
           </div>
         </motion.div>
       </div>
     </div>
-  )
+  );
 
-  return createPortal(modalContent, document.body)
+  return createPortal(modalContent, document.body);
 }

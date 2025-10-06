@@ -1,7 +1,14 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { Calendar, Microscope, ChevronRight, Dna, Layers, Globe } from 'lucide-react';
+import Link from "next/link";
+import {
+  Calendar,
+  Microscope,
+  ChevronRight,
+  Dna,
+  Layers,
+  Globe,
+} from "lucide-react";
 
 export default function OSDCard({ osd }: { osd: any }) {
   const inv = osd.investigation || {};
@@ -10,13 +17,16 @@ export default function OSDCard({ osd }: { osd: any }) {
   const assays = osd.assays || [];
   const organism = osd.study?.samples?.[0]?.characteristics?.Organism;
 
-  const osdId: string | null = typeof inv.id === 'string' && inv.id.length ? inv.id : null;
+  const osdId: string | null =
+    typeof inv.id === "string" && inv.id.length ? inv.id : null;
   const href = osdId ? `/osds/${osdId}` : undefined;
 
   const firstAssay = assays[0];
   const assayText = firstAssay
-    ? `${firstAssay.type || ''}${firstAssay.platform ? ` • ${firstAssay.platform}` : ''}`
-    : '—';
+    ? `${firstAssay.type || ""}${
+        firstAssay.platform ? ` • ${firstAssay.platform}` : ""
+      }`
+    : "—";
 
   const factorSet = new Set<string>(inv.factors || []);
   osd.study?.samples?.forEach((s: any) =>
@@ -34,7 +44,7 @@ export default function OSDCard({ osd }: { osd: any }) {
         <div className="flex items-start justify-between">
           <div>
             <h3 className="text-base sm:text-lg font-bold text-white line-clamp-2 group-hover:text-blue-300 transition-colors leading-tight">
-              {inv.title || 'Untitled'}
+              {inv.title || "Untitled"}
             </h3>
             {organism && (
               <div className="flex items-center gap-2 mt-2 text-xs sm:text-sm text-gray-300">
@@ -55,7 +65,7 @@ export default function OSDCard({ osd }: { osd: any }) {
 
         {/* Description */}
         <p className="text-xs sm:text-sm text-gray-300/90 line-clamp-3 leading-relaxed">
-          {inv.description || 'No description available'}
+          {inv.description || "No description available"}
         </p>
 
         {/* Factors */}
@@ -74,12 +84,14 @@ export default function OSDCard({ osd }: { osd: any }) {
 
         {/* Experimental info */}
         <div className="space-y-2">
-          {assayText && assayText !== '—' && (
+          {assayText && assayText !== "—" && (
             <div className="flex items-center gap-2">
               <div className="p-1.5 rounded-lg bg-purple-500/30">
                 <Microscope className="w-3.5 h-3.5 text-purple-200" />
               </div>
-              <span className="text-xs sm:text-sm text-gray-300 truncate">{assayText}</span>
+              <span className="text-xs sm:text-sm text-gray-300 truncate">
+                {assayText}
+              </span>
             </div>
           )}
 
@@ -88,7 +100,9 @@ export default function OSDCard({ osd }: { osd: any }) {
               <div className="p-1.5 rounded-lg bg-green-500/30">
                 <Calendar className="w-3.5 h-3.5 text-green-200" />
               </div>
-              <span className="text-xs sm:text-sm text-gray-300 truncate">{mission.name}</span>
+              <span className="text-xs sm:text-sm text-gray-300 truncate">
+                {mission.name}
+              </span>
             </div>
           )}
 
@@ -107,7 +121,7 @@ export default function OSDCard({ osd }: { osd: any }) {
         {/* Footer */}
         <div className="flex items-center justify-between pt-3 border-t border-white/10 mt-auto">
           <span className="text-xs text-gray-400">
-            {(mission?.link || project?.link) ? 'External resources' : ' '}
+            {mission?.link || project?.link ? "External resources" : " "}
           </span>
           <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-blue-300 group-hover:translate-x-1 transition-all flex-shrink-0" />
         </div>
@@ -121,7 +135,7 @@ export default function OSDCard({ osd }: { osd: any }) {
   );
 
   return href ? (
-    <Link href={href} aria-label={`Open ${inv.id || 'OSD'}`}>
+    <Link href={href} aria-label={`Open ${inv.id || "OSD"}`}>
       {CardInner}
     </Link>
   ) : (

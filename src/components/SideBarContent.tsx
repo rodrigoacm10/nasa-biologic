@@ -1,12 +1,5 @@
 import { useState } from "react";
-import {
-  FileText,
-  FlaskConical,
-  Search,
-  X,
-  Filter,
-  Heart,
-} from "lucide-react";
+import { FileText, FlaskConical, Search, X, Filter, Heart } from "lucide-react";
 import SidebarGroupLabel from "@/components/SiderGroupRelations";
 import FilterCheckboxGroup from "@/components/FilterCheckboxGroup";
 

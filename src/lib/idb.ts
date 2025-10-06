@@ -1,5 +1,5 @@
-const DB_NAME = 'nasa-cache';
-const STORE = 'kv';
+const DB_NAME = "nasa-cache";
+const STORE = "kv";
 
 function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -18,7 +18,7 @@ function openDB(): Promise<IDBDatabase> {
 export async function idbGet<T = unknown>(key: string): Promise<T | undefined> {
   const db = await openDB();
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE, 'readonly');
+    const tx = db.transaction(STORE, "readonly");
     const store = tx.objectStore(STORE);
     const req = store.get(key);
     req.onsuccess = () => resolve(req.result as T | undefined);
@@ -26,10 +26,13 @@ export async function idbGet<T = unknown>(key: string): Promise<T | undefined> {
   });
 }
 
-export async function idbSet<T = unknown>(key: string, value: T): Promise<void> {
+export async function idbSet<T = unknown>(
+  key: string,
+  value: T
+): Promise<void> {
   const db = await openDB();
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE, 'readwrite');
+    const tx = db.transaction(STORE, "readwrite");
     const store = tx.objectStore(STORE);
     const req = store.put(value as any, key);
     req.onsuccess = () => resolve();

@@ -2,6 +2,8 @@
 
 import { useState, useMemo, useEffect, useRef, ReactNode } from 'react'
 import { createPortal } from 'react-dom'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { X, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { ArticleMatches } from '@/app/article/[id]/page'
@@ -28,6 +30,9 @@ export default function ModalRelation({
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
 
   const containerRef = useRef<HTMLDivElement>(null)
+
+  const router = useRouter()
+
 
   useEffect(() => {
     setMounted(true)
@@ -77,6 +82,17 @@ export default function ModalRelation({
       }
     }
   }, [open, scale])
+
+const goToOsd = (e: React.MouseEvent | React.KeyboardEvent, osdId: string) => {
+  const formattedOsdId = osdId.replace(/^OSD-/, '');
+  
+  if (('metaKey' in e && e.metaKey) || ('ctrlKey' in e && e.ctrlKey)) {
+    window.open(`/osds/${formattedOsdId}`, '_blank', 'noopener,noreferrer');
+    return;
+  }
+  router.push(`/osds/${formattedOsdId}`);
+}
+
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (e.button !== 0) return
@@ -493,41 +509,60 @@ export default function ModalRelation({
                   </svg>
 
                   {/* Glass OSD Node */}
-                  <motion.div
-                    initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    whileHover={{ scale: 1.1 }}
-                    transition={{ duration: 0.3 }}
-                    onHoverStart={() => setHoveredOsd(match.osd_id)}
-                    onHoverEnd={() => setHoveredOsd(null)}
-                    className={`
-                      bg-gradient-to-br ${getColorBg(match.similarity)}
-                      backdrop-blur-xl border border-white/30
-                      rounded-full shadow-2xl ${getBorderGlow(match.similarity)}
-                      cursor-pointer transition-all duration-300
-                      ${hoveredOsd === match.osd_id ? `ring-4 ${getHoverRing(match.similarity)} shadow-lg` : ''}
-                    `}
-                    style={{
-                      width: `${size}px`,
-                      height: `${size}px`,
-                      boxShadow: hoveredOsd === match.osd_id
-                        ? `0 0 40px rgba(255, 255, 255, 0.3), 0 20px 60px rgba(0, 0, 0, 0.4)`
-                        : `0 8px 32px rgba(0, 0, 0, 0.3)`
-                    }}
-                  >
-                    <div className="w-full h-full flex flex-col items-center justify-center p-3 relative">
-                      {/* Glass reflection effect */}
-                      <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/20 via-transparent to-transparent pointer-events-none" />
+<motion.div
+  initial={{ scale: 0, opacity: 0 }}
+  animate={{ scale: 1, opacity: 1 }}
+  whileHover={{ scale: 1.1 }}
+  transition={{ duration: 0.3 }}
+  onHoverStart={() => setHoveredOsd(match.osd_id)}
+  onHoverEnd={() => setHoveredOsd(null)}
+  // ↓↓↓ ADIÇÕES IMPORTANTES ↓↓↓
+  onMouseDown={(e) => {
+    // evita que o clique na bolha comece o "drag" do mapa
+    e.stopPropagation()
+  }}
+  onClick={(e) => {
+    // se estiver arrastando, não navega
+    if (isDragging) return
+    goToOsd(e, match.osd_id)
+  }}
+  onKeyDown={(e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      goToOsd(e, match.osd_id)
+    }
+  }}
+  role="button"
+  tabIndex={0}
+  aria-label={`Abrir OSD ${match.osd_id}`}
+  title={`Abrir OSD ${match.osd_id}`}
+  className={`
+    bg-gradient-to-br ${getColorBg(match.similarity)}
+    backdrop-blur-xl border border-white/30
+    rounded-full shadow-2xl ${getBorderGlow(match.similarity)}
+    cursor-pointer transition-all duration-300
+    ${hoveredOsd === match.osd_id ? `ring-4 ${getHoverRing(match.similarity)} shadow-lg` : ''}
+  `}
+  style={{
+    width: `${size}px`,
+    height: `${size}px`,
+    boxShadow: hoveredOsd === match.osd_id
+      ? `0 0 40px rgba(255, 255, 255, 0.3), 0 20px 60px rgba(0, 0, 0, 0.4)`
+      : `0 8px 32px rgba(0, 0, 0, 0.3)`
+  }}
+>
+  <div className="w-full h-full flex flex-col items-center justify-center p-3 relative">
+    <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/20 via-transparent to-transparent pointer-events-none" />
+    <p className="text-white font-bold text-sm truncate w-full text-center px-2 drop-shadow-lg relative z-10">
+      {match.osd_id}
+    </p>
+    <div className="w-3/4 h-[2px] my-2 rounded-full bg-white/30 backdrop-blur-sm relative z-10" />
+    <p className="text-white text-lg font-bold drop-shadow-lg relative z-10">
+      {similarityPct}%
+    </p>
+  </div>
+</motion.div>
 
-                      <p className="text-white font-bold text-sm truncate w-full text-center px-2 drop-shadow-lg relative z-10">
-                        {match.osd_id}
-                      </p>
-                      <div className="w-3/4 h-[2px] my-2 rounded-full bg-white/30 backdrop-blur-sm relative z-10" />
-                      <p className="text-white text-lg font-bold drop-shadow-lg relative z-10">
-                        {similarityPct}%
-                      </p>
-                    </div>
-                  </motion.div>
 
                   {/* Glass Tooltip */}
                   {hoveredOsd === match.osd_id && (
